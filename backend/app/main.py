@@ -1,4 +1,9 @@
-from fastapi import Depends, FastAPI
+from fastapi import APIRouter, Depends, FastAPI
+
+from agentscope.app import create_app as create_agentscope_app
+from agentscope.app.message_bus import RedisMessageBus
+from agentscope.app.storage import RedisStorage
+from agentscope.app.workspace_manager import LocalWorkspaceManager
 
 from backend.app.auth.current_user import CurrentUser, get_current_user
 from backend.app.config import Settings, get_settings
@@ -11,55 +16,27 @@ from backend.app.tools.factory import build_extra_agent_tools
 from backend.app.workspace.manager import build_workspace_plan
 
 
-def create_platform_app(settings: Settings | None = None) -> FastAPI:
-    """Create the enterprise platform FastAPI app.
+def create_platform_router(settings: Settings) -> APIRouter:
+    """Create platform-owned routes mounted onto the AgentScope app."""
 
-    TODO: Confirm the exact AgentScope 2.0.3 Agent Service import path before
-    replacing or mounting this app with the official create_app entry point.
+    router = APIRouter(tags=["platform"])
 
-    Intended integration shape:
-    - load settings
-    - initialize storage, later RedisStorage
-    - initialize message_bus, later RedisMessageBus
-    - initialize workspace_manager, later LocalWorkspaceManager or DockerWorkspaceManager
-    - register extra_agent_tools factory
-    - register extra_agent_middlewares factory
-    - reserve knowledge_base_manager, blob_store, parsers, chunker
-    - return FastAPI app
-    """
-
-    settings = settings or get_settings()
-    app = FastAPI(
-        title="AgentScope Enterprise Multi-Tenant Agent Platform",
-        description="MVP scaffold for an enterprise AgentScope 2.0.3 platform.",
-        version="0.1.0",
-    )
-    app.state.settings = settings
-
-    # TODO: Initialize AgentScope storage here after confirming 2.0.3 import path.
-    app.state.storage = None
-    # TODO: Initialize AgentScope RedisMessageBus here.
-    app.state.message_bus = None
-    # TODO: Initialize AgentScope workspace manager here.
-    app.state.workspace_manager = None
-    # TODO: Initialize RAG knowledge_base_manager, blob_store, parsers, chunker.
-    app.state.knowledge_base_manager = None
-
-    @app.get("/health", tags=["platform"])
+    @router.get("/platform/health")
     async def health() -> dict[str, str]:
         return {
             "status": "ok",
             "app": settings.app_name,
             "env": settings.app_env,
+            "agent_service": "agentscope",
         }
 
-    @app.get("/api/me", tags=["platform"])
+    @router.get("/api/me")
     async def read_current_user(
         current_user: CurrentUser = Depends(get_current_user),
     ) -> dict[str, object]:
         return current_user.model_dump()
 
-    @app.get("/api/platform/capabilities", tags=["platform"])
+    @router.get("/api/platform/capabilities")
     async def read_platform_capabilities(
         current_user: CurrentUser = Depends(get_current_user),
     ) -> dict[str, object]:
@@ -71,9 +48,9 @@ def create_platform_app(settings: Settings | None = None) -> FastAPI:
         )
         return {
             "identity_mode": "header_simulation",
-            "agentscope_agent_service": "TODO: mount official Agent Service app",
-            "storage": "TODO: RedisStorage",
-            "message_bus": "TODO: RedisMessageBus",
+            "agentscope_agent_service": "enabled",
+            "storage": "RedisStorage",
+            "message_bus": "RedisMessageBus",
             "workspace": build_workspace_plan(settings, context).model_dump(),
             "extra_agent_tools": len(build_extra_agent_tools(context)),
             "extra_agent_middlewares": len(build_extra_agent_middlewares(context)),
@@ -82,6 +59,67 @@ def create_platform_app(settings: Settings | None = None) -> FastAPI:
             "team": build_agent_team_plan().model_dump(),
         }
 
+    return router
+
+
+def create_platform_app(settings: Settings | None = None) -> FastAPI:
+    """Create the AgentScope Agent Service app with platform extensions.
+
+    The returned object is the FastAPI app produced by AgentScope 2.0.3
+    `create_app`. Platform-specific routes are added with `include_router`,
+    so the Agent Service app is not nested under another FastAPI app.
+    """
+
+    settings = settings or get_settings()
+
+    storage = RedisStorage(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        db=settings.redis_db,
+    )
+    message_bus = RedisMessageBus(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        db=settings.redis_db,
+    )
+    workspace_manager = LocalWorkspaceManager(
+        basedir=settings.workspace_basedir,
+        ttl=float(settings.workspace_ttl_seconds),
+    )
+
+    # Phase 1 passes empty extension lists through the existing factories.
+    # TODO: Upgrade to tenant/session-aware dynamic injection once the AgentScope
+    # extension calling convention is validated in the ECS 2.0.3 environment.
+    platform_context = PlatformContext()
+    extra_agent_tools = build_extra_agent_tools(platform_context)
+    extra_agent_middlewares = build_extra_agent_middlewares(platform_context)
+
+    app = create_agentscope_app(
+        storage=storage,
+        message_bus=message_bus,
+        workspace_manager=workspace_manager,
+        knowledge_base_manager=None,
+        knowledge_parsers=None,
+        knowledge_chunker=None,
+        blob_store=None,
+        enable_index_worker=True,
+        extra_agent_tools=extra_agent_tools,
+        extra_agent_middlewares=extra_agent_middlewares,
+        title="AgentScope Enterprise Agent Platform",
+        version="0.1.0",
+    )
+
+    app.state.settings = settings
+    app.state.storage = storage
+    app.state.message_bus = message_bus
+    app.state.workspace_manager = workspace_manager
+    # TODO: Wire RAG Service objects: knowledge_base_manager, parsers, chunker,
+    # blob_store, and index worker.
+    app.state.knowledge_base_manager = None
+    # TODO: Wire Long-term Memory and Agent Team after the Agent Service main
+    # chain is validated.
+
+    app.include_router(create_platform_router(settings))
     return app
 
 

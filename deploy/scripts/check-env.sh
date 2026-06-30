@@ -27,8 +27,10 @@ for name in APP_NAME APP_ENV AGENT_SERVICE_HOST AGENT_SERVICE_PORT REDIS_HOST RE
     echo "Missing required variable: $name"
     exit 1
   fi
-  echo "$name is set"
+  echo "$name=${!name}"
 done
+
+echo "Backend will bind to ${AGENT_SERVICE_HOST}:${AGENT_SERVICE_PORT}"
 
 echo "== Redis =="
 if command -v redis-cli >/dev/null 2>&1; then

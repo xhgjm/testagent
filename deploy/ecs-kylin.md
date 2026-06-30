@@ -13,10 +13,18 @@ pip --version
 
 ## 2. Redis
 
-Redis 可使用已有服务，也可以由运维安装。
+Phase 1 后端会真实初始化 AgentScope `RedisStorage` 和 `RedisMessageBus`，因此 Redis 必须可连接。
 
 ```bash
 redis-cli -h 127.0.0.1 -p 6379 ping
+```
+
+如果 Redis 不在本机，请在 `.env` 中配置：
+
+```bash
+REDIS_HOST=<REDIS_HOST>
+REDIS_PORT=6379
+REDIS_DB=0
 ```
 
 ## 3. Optional Qdrant
@@ -27,7 +35,7 @@ RAG Service 阶段可通过 Docker 部署 Qdrant：
 docker run -d --name qdrant -p 6333:6333 -v /data/qdrant:/qdrant/storage qdrant/qdrant
 ```
 
-第一阶段仅预留 Qdrant 配置，不强制启动。
+Phase 1 仅预留 Qdrant 配置，不强制启动。
 
 ## 4. Code
 
@@ -65,6 +73,18 @@ vi .env
 - API Key、token、密码只写入 ECS 本地 `.env` 或企业密钥系统。
 - `WORKSPACE_BASEDIR` 和 `BLOB_STORE_ROOT` 建议放在 `/data/agent-platform/`。
 
+关键变量：
+
+```bash
+AGENT_SERVICE_HOST=0.0.0.0
+AGENT_SERVICE_PORT=8891
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_DB=0
+WORKSPACE_BASEDIR=/data/agent-platform/workspaces
+WORKSPACE_TTL_SECONDS=3600
+```
+
 ## 7. Start Backend
 
 ```bash
@@ -75,8 +95,16 @@ bash deploy/scripts/start-backend.sh
 打开：
 
 ```text
-http://ECS-IP:8000/docs
+http://ECS-IP:8891/docs
 ```
+
+平台自定义健康检查：
+
+```bash
+curl http://ECS-IP:8891/platform/health
+```
+
+ECS 演示环境统一使用 `8891`，因为 `8000` 已被已有服务占用。本地开发如果 `8000` 没被占用，可以在 `.env` 或启动命令中自行改回 `8000`。
 
 ## 8. systemd
 
@@ -91,6 +119,16 @@ sudo systemctl start agent-platform-backend
 sudo systemctl status agent-platform-backend
 ```
 
-## 9. Frontend
+## 9. Phase 1 Smoke Test
+
+按 [docs/phase1-smoke-test.md](../docs/phase1-smoke-test.md) 验证：
+
+- Redis 是否可用
+- backend 是否启动
+- `/docs` 是否可打开
+- `/platform/health` 和 `/api/me` 是否可用
+- AgentScope 原生 Credential / Agent / Session / Chat / SSE / Message API 是否可用
+
+## 10. Frontend
 
 第一阶段可以复用 AgentScope Studio 或 examples/web_ui 进行演示。自研企业前端在后续阶段接入 `BACKEND_BASE_URL`。

@@ -4,25 +4,35 @@
 
 - [x] backend 可以启动。
 - [x] `/docs` 可以打开。
-- [x] 支持 `X-User-ID`。
-- [ ] 可以创建 Credential。TODO: 接入 AgentScope Agent Service Credential API。
-- [ ] 可以创建 Agent。TODO: 接入 AgentScope Agent Service Agent 模板 API。
-- [ ] 可以创建 Session。TODO: 接入 AgentScope Agent Service Session API。
-- [ ] 可以 `POST /chat`。TODO: 接入 Session chat 主链路。
-- [ ] 可以订阅 SSE。TODO: 接入 AgentScope MessageBus / Event stream。
-- [ ] 可以查询 Message。TODO: 接入 AgentScope Message history。
+- [x] 支持 `X-User-ID` / `X-Tenant-ID`。
+- [x] 已接入 AgentScope 2.0.3 `create_app`。
+- [x] 已初始化 `RedisStorage`。
+- [x] 已初始化 `RedisMessageBus`。
+- [x] 已初始化 `LocalWorkspaceManager`。
+- [x] 保留平台自定义接口 `/platform/health`、`/api/me`、`/api/platform/capabilities`。
+- [ ] 可以创建 Credential。TODO: 通过 AgentScope 原生 API smoke test。
+- [ ] 可以创建 Agent。TODO: 通过 AgentScope 原生 API smoke test。
+- [ ] 可以创建 Session。TODO: 通过 AgentScope 原生 API smoke test。
+- [ ] 可以 `POST /chat`。TODO: 通过 AgentScope 原生 Session chat API smoke test。
+- [ ] 可以订阅 SSE。TODO: 验证 `/sessions/{session_id}/stream`。
+- [ ] 可以查询 Message。TODO: 验证 `/sessions/{session_id}/messages`。
 - [ ] userA / userB 隔离验证。TODO: 接入真实资源存储后验证。
-- [ ] Workspace 路径隔离验证。TODO: 当前已有路径规划，待接入 WorkspaceManager 后验证。
+- [ ] Workspace 路径隔离验证。TODO: 当前已有路径规划，待创建真实 Session 后验证。
 - [x] README 和部署文档完整。
 
-## Current Scaffold Checks
+## Phase 1 Smoke Checks
 
-- `GET /health`
+- `GET /platform/health`
 - `GET /api/me`
 - `GET /api/platform/capabilities`
+- `GET /docs`
 
 示例：
 
 ```bash
-curl -H "X-User-ID: userA" -H "X-Tenant-ID: tenantA" http://127.0.0.1:8000/api/me
+curl -H "X-User-ID: userA" -H "X-Tenant-ID: tenantA" http://127.0.0.1:8891/api/me
 ```
+
+更多验证步骤见 [phase1-smoke-test.md](phase1-smoke-test.md)。
+
+ECS 演示环境统一使用 `8891`，因为 `8000` 已被已有服务占用。本地开发如果 `8000` 没被占用，可以在 `.env` 或启动命令中自行改回 `8000`。

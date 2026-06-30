@@ -18,7 +18,7 @@ class Settings(BaseModel):
     app_env: str = "development"
 
     agent_service_host: str = "0.0.0.0"
-    agent_service_port: int = 8000
+    agent_service_port: int = 8891
 
     redis_host: str = "127.0.0.1"
     redis_port: int = 6379
@@ -30,7 +30,7 @@ class Settings(BaseModel):
 
     frontend_host: str = "0.0.0.0"
     frontend_port: int = 3000
-    backend_base_url: str = "http://127.0.0.1:8000"
+    backend_base_url: str = "http://127.0.0.1:8891"
 
     qdrant_host: str = "127.0.0.1"
     qdrant_port: int = 6333
@@ -54,7 +54,7 @@ def get_settings() -> Settings:
         app_name=getenv("APP_NAME", "agent-platform"),
         app_env=getenv("APP_ENV", "development"),
         agent_service_host=getenv("AGENT_SERVICE_HOST", "0.0.0.0"),
-        agent_service_port=int(getenv("AGENT_SERVICE_PORT", "8000")),
+        agent_service_port=int(getenv("AGENT_SERVICE_PORT", "8891")),
         redis_host=getenv("REDIS_HOST", "127.0.0.1"),
         redis_port=int(getenv("REDIS_PORT", "6379")),
         redis_db=int(getenv("REDIS_DB", "0")),
@@ -66,7 +66,7 @@ def get_settings() -> Settings:
         workspace_ttl_seconds=int(getenv("WORKSPACE_TTL_SECONDS", "3600")),
         frontend_host=getenv("FRONTEND_HOST", "0.0.0.0"),
         frontend_port=int(getenv("FRONTEND_PORT", "3000")),
-        backend_base_url=getenv("BACKEND_BASE_URL", "http://127.0.0.1:8000"),
+        backend_base_url=getenv("BACKEND_BASE_URL", "http://127.0.0.1:8891"),
         qdrant_host=getenv("QDRANT_HOST", "127.0.0.1"),
         qdrant_port=int(getenv("QDRANT_PORT", "6333")),
         blob_store_root=getenv("BLOB_STORE_ROOT", "/data/agent-platform/blobs"),

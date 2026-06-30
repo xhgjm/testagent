@@ -40,7 +40,7 @@ bash deploy/scripts/start-backend.sh
 打开：
 
 ```text
-http://ECS-IP:8000/docs
+http://ECS-IP:8891/docs
 ```
 
 展示：
@@ -54,7 +54,7 @@ http://ECS-IP:8000/docs
 使用 userA 模拟身份：
 
 ```bash
-curl -H "X-User-ID: userA" -H "X-Tenant-ID: tenantA" http://ECS-IP:8000/api/me
+curl -H "X-User-ID: userA" -H "X-Tenant-ID: tenantA" http://ECS-IP:8891/api/me
 ```
 
 后续 Phase 1 演示：
@@ -71,7 +71,7 @@ curl -H "X-User-ID: userA" -H "X-Tenant-ID: tenantA" http://ECS-IP:8000/api/me
 使用 userB 模拟身份：
 
 ```bash
-curl -H "X-User-ID: userB" -H "X-Tenant-ID: tenantA" http://ECS-IP:8000/api/me
+curl -H "X-User-ID: userB" -H "X-Tenant-ID: tenantA" http://ECS-IP:8891/api/me
 ```
 
 说明后续验证：

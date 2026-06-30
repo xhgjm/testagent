@@ -15,7 +15,7 @@ else
 fi
 
 HOST="${AGENT_SERVICE_HOST:-0.0.0.0}"
-PORT="${AGENT_SERVICE_PORT:-8000}"
+PORT="${AGENT_SERVICE_PORT:-8891}"
 PID_FILE="${PID_FILE:-$PROJECT_ROOT/logs/backend.pid}"
 
 mkdir -p "$PROJECT_ROOT/logs"

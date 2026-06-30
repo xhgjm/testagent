@@ -2,13 +2,13 @@
 
 基于 AgentScope 2.0.3 的企业级多租户 Agent 平台底座。
 
-当前阶段：MVP scaffold / platform foundation。
+当前阶段：Phase 1 / Agent Service integration。
 
 本项目不是单体 RAG 问答机器人，也不是只跑 AgentScope 官方 Demo。它的目标是在 AgentScope 2.0.3 Agent Service 能力之上，沉淀一个可部署、可演示、可扩展的企业 Agent 平台原型，优先跑通企业平台主链路：
 
 User / Tenant -> Credential -> Agent -> Session -> Chat -> SSE Event Stream -> Message History -> Workspace。
 
-RAG Service、Long-term Memory、Agent Team、Tool、Permission、Middleware 等能力在第一阶段做清晰预留，后续逐步接入。
+Agent Service 已作为后端主入口接入。RAG Service、Long-term Memory、Agent Team、Tool、Permission、Middleware 等能力在第一阶段继续做清晰预留，后续逐步接入。
 
 ## Project Positioning
 
@@ -79,20 +79,28 @@ RAG 是企业 Agent 平台的一类能力，不是整个平台本身。本项目
 4. 启动后端：
 
    ```bash
-   uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+   uvicorn backend.app.main:app --host 0.0.0.0 --port 8891 --reload
    ```
 
 5. 打开 API 文档：
 
    ```text
-   http://127.0.0.1:8000/docs
+   http://127.0.0.1:8891/docs
    ```
 
 6. 测试模拟用户：
 
    ```bash
-   curl -H "X-User-ID: userA" -H "X-Tenant-ID: tenantA" http://127.0.0.1:8000/api/me
+   curl -H "X-User-ID: userA" -H "X-Tenant-ID: tenantA" http://127.0.0.1:8891/api/me
    ```
+
+7. 测试平台健康检查：
+
+   ```bash
+   curl http://127.0.0.1:8891/platform/health
+   ```
+
+   ECS 演示环境统一使用 `8891`，因为 `8000` 已被已有服务占用。本地开发如果 `8000` 没被占用，可以在 `.env` 或启动命令中自行改回 `8000`。
 
 ## ECS Deployment
 
@@ -112,7 +120,7 @@ RAG 是企业 Agent 平台的一类能力，不是整个平台本身。本项目
 4. 复制 `.env.example` 为 `.env`，填入真实环境变量和 API Key。
 5. 执行 `bash deploy/scripts/check-env.sh` 检查环境。
 6. 执行 `bash deploy/scripts/start-backend.sh` 启动后端。
-7. 打开 `http://ECS-IP:8000/docs` 做汇报演示。
+7. 打开 `http://ECS-IP:8891/docs` 做汇报演示。
 8. 后续用 systemd 接管进程。
 
 更多细节见 [deploy/ecs-kylin.md](deploy/ecs-kylin.md)。
@@ -124,19 +132,20 @@ RAG 是企业 Agent 平台的一类能力，不是整个平台本身。本项目
 - [x] `/docs` 可打开。
 - [x] 支持 `X-User-ID` / `X-Tenant-ID` 模拟身份。
 - [x] Workspace、Tool、Permission、Middleware、RAG、Memory、Team 有明确接入点。
-- [ ] 接入 AgentScope 2.0.3 Agent Service 的真实 User / Credential / Agent / Session / Message API。
-- [ ] Credential 创建和隔离验证。
-- [ ] Agent 模板创建和隔离验证。
-- [ ] Session 创建和 Chat 主链路。
-- [ ] SSE Event Stream。
-- [ ] Message History 查询。
+- [x] 接入 AgentScope 2.0.3 Agent Service 的真实入口 `create_app`。
+- [x] 初始化 `RedisStorage`、`RedisMessageBus`、`LocalWorkspaceManager`。
+- [ ] Credential 创建和隔离验证。TODO: 使用 AgentScope 原生 API 做 smoke test。
+- [ ] Agent 模板创建和隔离验证。TODO: 使用 AgentScope 原生 API 做 smoke test。
+- [ ] Session 创建和 Chat 主链路。TODO: 使用 AgentScope 原生 API 做 smoke test。
+- [ ] SSE Event Stream。TODO: 验证 `/sessions/{session_id}/stream`。
+- [ ] Message History 查询。TODO: 验证 `/sessions/{session_id}/messages`。
 - [ ] userA / userB 数据隔离验证。
 - [ ] Workspace 运行目录隔离验证。
 
 ## Roadmap
 
 - Phase 0：环境和项目骨架。
-- Phase 1：Agent Service 主链路，打通 User / Credential / Agent / Session / Chat / SSE / Message。
+- Phase 1：Agent Service 主链路，接入 `create_app`，打通 User / Credential / Agent / Session / Chat / SSE / Message。
 - Phase 2：Workspace + Tool + Permission，接入本地和 Docker Workspace，完善工具审计。
 - Phase 3：RAG Service，接入 KnowledgeBase、Document、Qdrant、BlobStore、Index worker。
 - Phase 4：Long-term Memory，按 Agent 策略启用长期记忆和敏感信息保护。
