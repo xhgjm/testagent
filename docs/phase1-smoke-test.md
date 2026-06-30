@@ -229,3 +229,30 @@ curl -H "X-User-ID: userB" -H "X-Tenant-ID: tenantA" http://127.0.0.1:8891/api/p
 期望 workspace plan 中 user_id 不同。后续在真实 Credential / Agent / Session 存储接入后，还需要验证资源查询隔离。
 
 ECS 演示环境统一使用 `8891`，因为 `8000` 已被已有服务占用。本地开发如果 `8000` 没被占用，可以在 `.env` 或启动命令中自行改回 `8000`。
+
+## 15. Troubleshooting
+
+### `TypeError: 'list' object is not callable`
+
+如果 ECS 日志在 `agentscope/app/_service/_chat.py` 的 `ChatService.run` 中出现：
+
+```text
+TypeError: 'list' object is not callable
+```
+
+说明传给 AgentScope `create_app` 的 `extra_agent_tools` 或 `extra_agent_middlewares` 被误传成了列表，例如 `[]`。AgentScope 2.0.3 会在运行时调用它们，因此必须传入 async factory：
+
+```python
+async def build_extra_agent_tools(user_id: str, agent_id: str, session_id: str) -> list:
+    return []
+
+async def build_extra_agent_middlewares(user_id: str, agent_id: str, session_id: str) -> list:
+    return []
+```
+
+`create_app` 中应传函数本身：
+
+```python
+extra_agent_tools=build_extra_agent_tools
+extra_agent_middlewares=build_extra_agent_middlewares
+```

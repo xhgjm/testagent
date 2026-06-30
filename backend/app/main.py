@@ -52,8 +52,8 @@ def create_platform_router(settings: Settings) -> APIRouter:
             "storage": "RedisStorage",
             "message_bus": "RedisMessageBus",
             "workspace": build_workspace_plan(settings, context).model_dump(),
-            "extra_agent_tools": len(build_extra_agent_tools(context)),
-            "extra_agent_middlewares": len(build_extra_agent_middlewares(context)),
+            "extra_agent_tools": "async_factory",
+            "extra_agent_middlewares": "async_factory",
             "rag": build_rag_service_plan(settings).model_dump(),
             "memory": build_memory_plan().model_dump(),
             "team": build_agent_team_plan().model_dump(),
@@ -87,13 +87,6 @@ def create_platform_app(settings: Settings | None = None) -> FastAPI:
         ttl=float(settings.workspace_ttl_seconds),
     )
 
-    # Phase 1 passes empty extension lists through the existing factories.
-    # TODO: Upgrade to tenant/session-aware dynamic injection once the AgentScope
-    # extension calling convention is validated in the ECS 2.0.3 environment.
-    platform_context = PlatformContext()
-    extra_agent_tools = build_extra_agent_tools(platform_context)
-    extra_agent_middlewares = build_extra_agent_middlewares(platform_context)
-
     app = create_agentscope_app(
         storage=storage,
         message_bus=message_bus,
@@ -103,8 +96,10 @@ def create_platform_app(settings: Settings | None = None) -> FastAPI:
         knowledge_chunker=None,
         blob_store=None,
         enable_index_worker=True,
-        extra_agent_tools=extra_agent_tools,
-        extra_agent_middlewares=extra_agent_middlewares,
+        # AgentScope 2.0.3 calls these async factories at ChatService runtime.
+        # Do not pass prebuilt lists here.
+        extra_agent_tools=build_extra_agent_tools,
+        extra_agent_middlewares=build_extra_agent_middlewares,
         title="AgentScope Enterprise Agent Platform",
         version="0.1.0",
     )
