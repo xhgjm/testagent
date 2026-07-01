@@ -270,3 +270,24 @@ Recommended next phase:
 - Keep ASK mode disabled for enterprise backend usage.
 - Preserve default deny.
 - Continue avoiding MCP, Skills, shell, system commands, file deletion, and real enterprise tools until governance is complete.
+
+
+## ECS Smoke Test Result
+
+Date: 2026-07-01
+Port: 8891
+Result: Passed
+
+Verified:
+- Existing chat/session/message flow still works when runtime tools are disabled.
+- Default configuration keeps PLATFORM_ENABLE_RUNTIME_TOOLS=false and PLATFORM_RUNTIME_TOOLS_MODE=disabled.
+- build_extra_agent_tools returns [] by default.
+- runtime_echo_tool is visible in /api/platform/tools metadata.
+- runtime_echo_tool is a safe mock tool only.
+- With PLATFORM_ENABLE_RUNTIME_TOOLS=true and PLATFORM_RUNTIME_TOOLS_MODE=mock, adapter still requires permission allow.
+- After adding explicit allow for runtime_echo_tool, build_extra_agent_tools returns runtime_echo_tool.
+- Without explicit runtime enablement, adapter returns [] even if allow rule exists.
+- No MCP, Skill, shell, file deletion, network access, or enterprise system integration is enabled.
+
+Conclusion:
+Phase 2.3.3 extra_agent_tools adapter skeleton passed ECS smoke test.
