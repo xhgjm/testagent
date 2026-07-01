@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -79,8 +79,13 @@ class WorkspaceResolveResponse(BaseModel):
 
 
 class ToolInfo(BaseModel):
+    tool_name: str
     name: str
     description: str
+    native_type: Literal["mock", "agentscope_tool", "mcp", "skill"]
+    native_ref: str | None = None
+    timeout_seconds: float
+    enabled: bool
     input_schema: dict[str, Any]
     default_timeout_seconds: float
 

@@ -1,6 +1,6 @@
 import asyncio
 from datetime import UTC, datetime
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -13,6 +13,13 @@ class RegisteredTool(BaseModel):
     input_schema: dict[str, Any]
     handler: Callable[[dict[str, Any]], Awaitable[Any]]
     default_timeout_seconds: float = 5.0
+    native_type: Literal["mock", "agentscope_tool", "mcp", "skill"] = "mock"
+    native_ref: str | None = None
+    enabled: bool = True
+
+    @property
+    def timeout_seconds(self) -> float:
+        return self.default_timeout_seconds
 
 
 async def echo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -48,6 +55,9 @@ TOOLS: dict[str, RegisteredTool] = {
         input_schema={"type": "object", "additionalProperties": True},
         handler=echo_tool,
         default_timeout_seconds=5.0,
+        native_type="mock",
+        native_ref=None,
+        enabled=True,
     ),
     "time_tool": RegisteredTool(
         name="time_tool",
@@ -55,6 +65,9 @@ TOOLS: dict[str, RegisteredTool] = {
         input_schema={"type": "object", "additionalProperties": True},
         handler=time_tool,
         default_timeout_seconds=5.0,
+        native_type="mock",
+        native_ref=None,
+        enabled=True,
     ),
     "slow_tool": RegisteredTool(
         name="slow_tool",
@@ -66,6 +79,9 @@ TOOLS: dict[str, RegisteredTool] = {
         },
         handler=slow_tool,
         default_timeout_seconds=1.0,
+        native_type="mock",
+        native_ref=None,
+        enabled=True,
     ),
 }
 

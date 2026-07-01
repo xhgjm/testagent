@@ -69,7 +69,7 @@ def get_native_client(settings: Settings = Depends(get_settings)) -> AgentScopeN
 async def platform_overview() -> PlatformOverviewResponse:
     return PlatformOverviewResponse(
         platform="agent-platform",
-        phase="phase-2.1",
+        phase="phase-2.3.1",
         agent_service="agentscope",
         features={
             "tenant_isolation": True,
@@ -87,6 +87,7 @@ async def platform_overview() -> PlatformOverviewResponse:
             "tool_permission_admin": True,
             "tool_timeout": True,
             "structured_tracing": True,
+            "tool_native_metadata": True,
             "workspace_files": True,
             "workspace_cleanup": "dry-run by default",
             "rag": "reserved for phase-3",
@@ -345,8 +346,13 @@ async def list_platform_tools(
     _ = scoped_user
     tools = [
         ToolInfo(
+            tool_name=tool.name,
             name=tool.name,
             description=tool.description,
+            native_type=tool.native_type,
+            native_ref=tool.native_ref,
+            timeout_seconds=tool.timeout_seconds,
+            enabled=tool.enabled,
             input_schema=tool.input_schema,
             default_timeout_seconds=tool.default_timeout_seconds,
         )

@@ -152,6 +152,29 @@ Tool calls return or record `trace_id`, `status`, `duration_ms`, and `error_code
 
 Full smoke test: [../docs/phase2_1-hardening.md](../docs/phase2_1-hardening.md).
 
+## Phase 2.3.1 Tool Metadata Native Alignment
+
+Phase 2.3.1 extends the platform tool registry metadata without changing runtime tool execution.
+
+`GET /api/platform/tools` now returns:
+
+- `tool_name`
+- `description`
+- `native_type`
+- `native_ref`
+- `timeout_seconds`
+- `enabled`
+
+The current mock tools are still safe local tools:
+
+- `echo_tool`: `native_type=mock`, `native_ref=null`
+- `time_tool`: `native_type=mock`, `native_ref=null`
+- `slow_tool`: `native_type=mock`, `native_ref=null`
+
+`POST /api/platform/tools/{tool_name}/invoke` keeps the same request body and continues to use the existing permission, timeout, audit, and tracing flow. This phase does not implement the `extra_agent_tools` adapter or native AgentScope runtime tool calling.
+
+Full smoke test: [../docs/phase2_3_1-tool-metadata.md](../docs/phase2_3_1-tool-metadata.md).
+
 ## Current TODO
 
 - Smoke test Credential / Agent / Session / Message APIs through official Agent Service.
@@ -159,3 +182,4 @@ Full smoke test: [../docs/phase2_1-hardening.md](../docs/phase2_1-hardening.md).
 - Add Redis password / TLS options if the ECS Redis requires them.
 - Add DockerWorkspaceManager after local workspace flow is stable.
 - Add tenant-aware permission checks and audit middleware.
+- Implement `extra_agent_tools` adapter in a later Phase 2.3 step after verifying AgentScope 2.0.3 tool signatures.
