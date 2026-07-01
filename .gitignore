@@ -11,5 +11,7 @@ pycache/
 .DS_Store
 *.log
 logs/
+.runtime/
+config/tool-permissions.local.json
 .cache/
 .pytest_cache/

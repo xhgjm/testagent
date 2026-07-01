@@ -1,0 +1,16 @@
+{
+  "allow": [
+    {
+      "tenant_id": "tenantA",
+      "user_id": "userA",
+      "agent_id": "*",
+      "tool_name": "echo_tool"
+    },
+    {
+      "tenant_id": "tenantA",
+      "user_id": "userA",
+      "agent_id": "*",
+      "tool_name": "time_tool"
+    }
+  ]
+}

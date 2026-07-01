@@ -99,6 +99,36 @@ Do not log, return, or commit real API keys. Use `<YOUR_API_KEY>` or environment
 
 Full smoke test: [../docs/phase1_5-platform-api.md](../docs/phase1_5-platform-api.md).
 
+## Phase 2 Workspace, Tool, Permission
+
+Phase 2 adds platform-owned enterprise primitives without changing AgentScope native APIs:
+
+- `GET /api/platform/workspaces/resolve`
+- `GET /api/platform/tools`
+- `POST /api/platform/tools/{tool_name}/invoke`
+- `GET /api/platform/audit/tool-calls`
+
+Workspace paths are resolved by `tenant_id/user_id/agent_id/session_id`. Tool invocation is default deny. Add explicit allow rules with `PLATFORM_TOOL_PERMISSION_FILE`.
+
+Example permission file:
+
+```json
+{
+  "allow": [
+    {
+      "tenant_id": "tenantA",
+      "user_id": "userA",
+      "agent_id": "*",
+      "tool_name": "echo_tool"
+    }
+  ]
+}
+```
+
+Tool audit is written to `PLATFORM_TOOL_AUDIT_LOG_FILE`, defaulting to `logs/tool-calls-audit.jsonl`.
+
+Full smoke test: [../docs/phase2-workspace-tool-permission.md](../docs/phase2-workspace-tool-permission.md).
+
 ## Current TODO
 
 - Smoke test Credential / Agent / Session / Message APIs through official Agent Service.

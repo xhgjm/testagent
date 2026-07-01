@@ -9,6 +9,11 @@ from backend.app.platform.native_client import (
     extract_collection,
     extract_resource_id,
 )
+from backend.app.platform.audit import (
+    append_tool_audit_record,
+    read_tool_audit_records,
+)
+from backend.app.platform.permissions import is_tool_allowed
 from backend.app.platform.schemas import (
     AgentCreateRequest,
     AgentCreateResponse,
@@ -21,8 +26,16 @@ from backend.app.platform.schemas import (
     SessionCreateResponse,
     SessionListResponse,
     StreamUrlResponse,
+    ToolAuditListResponse,
+    ToolInfo,
+    ToolInvokeRequest,
+    ToolInvokeResponse,
+    ToolListResponse,
+    WorkspaceResolveResponse,
 )
 from backend.app.platform.security import ScopedUser, get_scoped_user
+from backend.app.platform.tools import get_registered_tool, list_registered_tools
+from backend.app.platform.workspace import ensure_workspace_path
 
 
 router = APIRouter(prefix="/api/platform", tags=["platform-api"])
@@ -36,7 +49,7 @@ def get_native_client(settings: Settings = Depends(get_settings)) -> AgentScopeN
 async def platform_overview() -> PlatformOverviewResponse:
     return PlatformOverviewResponse(
         platform="agent-platform",
-        phase="phase-1.5",
+        phase="phase-2",
         agent_service="agentscope",
         features={
             "tenant_isolation": True,
@@ -47,9 +60,10 @@ async def platform_overview() -> PlatformOverviewResponse:
             "chat": True,
             "message_history": True,
             "sse": "native stream url",
-            "workspace": "reserved for phase-2",
-            "tools": "reserved for phase-2",
-            "permission": "reserved for phase-2",
+            "workspace": True,
+            "tools": True,
+            "permission": True,
+            "tool_audit": True,
             "rag": "reserved for phase-3",
             "memory": "reserved for phase-4",
             "agent_team": "reserved for phase-5",
@@ -201,3 +215,113 @@ async def get_platform_stream_url(
             "a later phase."
         ),
     )
+
+
+@router.get("/workspaces/resolve", response_model=WorkspaceResolveResponse)
+async def resolve_platform_workspace(
+    agent_id: str = Query(...),
+    session_id: str = Query(...),
+    create: bool = Query(default=True),
+    scoped_user: ScopedUser = Depends(get_scoped_user),
+    settings: Settings = Depends(get_settings),
+) -> WorkspaceResolveResponse:
+    path, created = ensure_workspace_path(
+        settings,
+        scoped_user,
+        agent_id,
+        session_id,
+        create=create,
+    )
+    return WorkspaceResolveResponse(
+        tenant_id=scoped_user.tenant_id,
+        user_id=scoped_user.user_id,
+        agent_id=agent_id,
+        session_id=session_id,
+        workspace_path=str(path),
+        created=created,
+        exists=path.exists(),
+        isolation_strategy="tenant_id/user_id/agent_id/session_id",
+    )
+
+
+@router.get("/tools", response_model=ToolListResponse)
+async def list_platform_tools(
+    scoped_user: ScopedUser = Depends(get_scoped_user),
+) -> ToolListResponse:
+    _ = scoped_user
+    tools = [
+        ToolInfo(
+            name=tool.name,
+            description=tool.description,
+            input_schema=tool.input_schema,
+        )
+        for tool in list_registered_tools()
+    ]
+    return ToolListResponse(
+        tools=tools,
+        permission_model="default_deny_explicit_allow",
+    )
+
+
+@router.post("/tools/{tool_name}/invoke", response_model=ToolInvokeResponse)
+async def invoke_platform_tool(
+    tool_name: str,
+    request: ToolInvokeRequest,
+    scoped_user: ScopedUser = Depends(get_scoped_user),
+    settings: Settings = Depends(get_settings),
+) -> ToolInvokeResponse:
+    tool = get_registered_tool(tool_name)
+    if tool is None:
+        append_tool_audit_record(
+            settings,
+            scoped_user,
+            request.agent_id,
+            request.session_id,
+            tool_name,
+            allowed=False,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tool not found: {tool_name}",
+        )
+
+    allowed = is_tool_allowed(settings, scoped_user, request.agent_id, tool_name)
+    append_tool_audit_record(
+        settings,
+        scoped_user,
+        request.agent_id,
+        request.session_id,
+        tool_name,
+        allowed=allowed,
+    )
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Tool invocation denied. Phase 2 uses default deny; add an "
+                "explicit allow rule to PLATFORM_TOOL_PERMISSION_FILE."
+            ),
+        )
+
+    result = await tool.handler(request.arguments)
+    return ToolInvokeResponse(tool_name=tool_name, allowed=True, result=result)
+
+
+@router.get("/audit/tool-calls", response_model=ToolAuditListResponse)
+async def list_tool_call_audit(
+    agent_id: str | None = Query(default=None),
+    session_id: str | None = Query(default=None),
+    tool_name: str | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=1000),
+    scoped_user: ScopedUser = Depends(get_scoped_user),
+    settings: Settings = Depends(get_settings),
+) -> ToolAuditListResponse:
+    records = read_tool_audit_records(
+        settings,
+        scoped_user,
+        agent_id=agent_id,
+        session_id=session_id,
+        tool_name=tool_name,
+        limit=limit,
+    )
+    return ToolAuditListResponse(records=records, total=len(records))

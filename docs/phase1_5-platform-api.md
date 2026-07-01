@@ -285,3 +285,28 @@ Phase 2 建议进入 Workspace + Tool + Permission：
 - Tool permission check。
 - Tool audit log。
 - Budget / tracing middleware。
+
+
+## ECS Smoke Test Result
+
+Date: 2026-07-01
+Port: 8891
+Result: Passed
+
+Verified:
+- /platform/health returns ok.
+- /api/platform/overview returns phase-1.5 metadata.
+- Platform business APIs require X-Tenant-ID and X-User-ID.
+- tenantA/userA can create and list its own agent.
+- tenantB/userA cannot access tenantA/userA agent/session.
+- tenantB/userA can create and list its own agent/session.
+- tenantA/userA cannot access tenantB/userA agent/session.
+- AgentScope stores scoped user_id as tenant_id:user_id.
+- credential creation works with provider=openai_compatible.
+- session creation works with credential_id, name, and model.
+- chat returns status=started.
+- message history contains both user and assistant messages.
+- stream-url returns native AgentScope SSE endpoint.
+
+Conclusion:
+Phase 1.5 platform API facade and basic multi-tenant isolation passed ECS smoke test.

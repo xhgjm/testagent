@@ -12,6 +12,8 @@ Agent Service 已作为后端主入口接入。RAG Service、Long-term Memory、
 
 Phase 1.5 新增平台 API facade。企业入口推荐使用 `/api/platform/...`，AgentScope 原生接口继续保留用于底层调试。
 
+Phase 2 新增 Workspace + Tool + Permission 雏形：平台可以解析并创建租户隔离 workspace，列出 mock tools，按默认 deny / 显式 allow 策略调用工具，并记录工具调用审计。
+
 ## Project Positioning
 
 - 平台名称：AgentScope Enterprise Multi-Tenant Agent Platform
@@ -38,6 +40,24 @@ Phase 1.5 新增平台 API facade。企业入口推荐使用 `/api/platform/...`
 AgentScope 原生接口仍保留，用于底层调试。平台层通过 `scoped_user_id = tenant_id:user_id` 调用原生接口，实现基础租户隔离。例如外部请求 `X-Tenant-ID: tenantA`、`X-User-ID: userA`，内部转发给 AgentScope 时使用 `X-User-ID: tenantA:userA`。
 
 不要在请求示例、日志或代码中写入真实 API Key。文档只使用 `<YOUR_API_KEY>` 或环境变量占位。完整 smoke test 见 [docs/phase1_5-platform-api.md](docs/phase1_5-platform-api.md)。
+
+## Phase 2 Workspace + Tool + Permission
+
+新增平台接口：
+
+- `GET /api/platform/workspaces/resolve`
+- `GET /api/platform/tools`
+- `POST /api/platform/tools/{tool_name}/invoke`
+- `GET /api/platform/audit/tool-calls`
+
+Phase 2 只实现企业能力雏形：
+
+- Workspace：按 `tenant_id/user_id/agent_id/session_id` 生成隔离路径，并可创建目录。
+- Tool Registry：内置安全 mock tools：`echo_tool`、`time_tool`。
+- Permission：工具调用默认 deny，只有 JSON allow-list 显式允许才可调用。
+- Audit Log：每次工具调用记录 JSONL 审计日志，包含 tenant、user、agent、session、tool、allowed/denied、timestamp。
+
+完整 smoke test 见 [docs/phase2-workspace-tool-permission.md](docs/phase2-workspace-tool-permission.md)。
 
 ## Why Not A Single RAG Bot
 
@@ -167,7 +187,7 @@ RAG 是企业 Agent 平台的一类能力，不是整个平台本身。本项目
 - Phase 0：环境和项目骨架。
 - Phase 1：Agent Service 主链路，接入 `create_app`，打通 User / Credential / Agent / Session / Chat / SSE / Message。
 - Phase 1.5：平台 API facade，基于 `tenant_id:user_id` 实现基础租户隔离。
-- Phase 2：Workspace + Tool + Permission，接入本地和 Docker Workspace，完善工具审计。
+- Phase 2：Workspace + Tool + Permission，增加隔离 workspace、mock tools、默认 deny 权限和工具审计。
 - Phase 3：RAG Service，接入 KnowledgeBase、Document、Qdrant、BlobStore、Index worker。
 - Phase 4：Long-term Memory，按 Agent 策略启用长期记忆和敏感信息保护。
 - Phase 5：Agent Team，支持 Leader Session 派生 Worker Session。

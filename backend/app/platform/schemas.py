@@ -65,3 +65,52 @@ class ChatRequest(BaseModel):
 class StreamUrlResponse(BaseModel):
     stream_url: str
     note: str
+
+
+class WorkspaceResolveResponse(BaseModel):
+    tenant_id: str
+    user_id: str
+    agent_id: str
+    session_id: str
+    workspace_path: str
+    created: bool
+    exists: bool
+    isolation_strategy: str
+
+
+class ToolInfo(BaseModel):
+    name: str
+    description: str
+    input_schema: dict[str, Any]
+
+
+class ToolListResponse(BaseModel):
+    tools: list[ToolInfo]
+    permission_model: str
+
+
+class ToolInvokeRequest(BaseModel):
+    agent_id: str
+    session_id: str
+    arguments: dict[str, Any] = Field(default_factory=dict)
+
+
+class ToolInvokeResponse(BaseModel):
+    tool_name: str
+    allowed: bool
+    result: Any | None = None
+
+
+class ToolAuditRecord(BaseModel):
+    tenant_id: str
+    user_id: str
+    agent_id: str
+    session_id: str
+    tool_name: str
+    allowed: bool
+    timestamp: str
+
+
+class ToolAuditListResponse(BaseModel):
+    records: list[dict[str, Any]]
+    total: int
