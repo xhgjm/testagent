@@ -200,7 +200,7 @@ Phase 2.3.4 adds:
 
 ## Relationship To Phase 2.3.5
 
-Phase 2.3.5 should add runtime audit/tracing middleware:
+Phase 2.3.5 adds runtime audit/tracing for `runtime_echo_tool`:
 
 - trace id
 - runtime tool name
@@ -209,7 +209,7 @@ Phase 2.3.5 should add runtime audit/tracing middleware:
 - duration
 - error code
 
-This should not replace the permission checks added here.
+This does not replace the permission checks added here. It wraps the same runtime callable and records success/denied/error outcomes without logging user input text.
 
 ## Local Smoke Test
 
@@ -309,13 +309,11 @@ Do not require the model to automatically call `runtime_echo_tool` in real chat 
 
 ## Next Step: Phase 2.3.5
 
-Recommended next phase:
+Phase 2.3.5 follow-up:
 
-- implement runtime audit middleware using `extra_agent_middlewares`
-- capture runtime tool call trace fields
-- keep default runtime tools disabled
-- keep permission checks from Phase 2.3.4
-- do not enable MCP or Skills until audit and permission boundaries are mature
+- `runtime_echo_tool` audit/tracing is implemented.
+- `extra_agent_middlewares` skeleton is connected through the existing factory and remains disabled by default.
+- Full details: [phase2_3_5-runtime-audit-middleware.md](phase2_3_5-runtime-audit-middleware.md).
 
 
 ## ECS Smoke Test Result

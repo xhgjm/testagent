@@ -1,11 +1,19 @@
+from agentscope.middleware import MiddlewareBase
+
+from backend.app.platform.runtime_middlewares import (
+    build_extra_agent_middlewares as build_platform_runtime_middlewares,
+)
+
+
 async def build_extra_agent_middlewares(
     user_id: str,
     agent_id: str,
     session_id: str,
-) -> list:
+) -> list[MiddlewareBase]:
     """Build tenant-aware AgentScope middleware instances.
 
-    First-stage MVP returns no middleware. Planned middleware:
+    Delegates to the platform runtime middleware factory. It returns [] by
+    default unless runtime audit is explicitly enabled. Planned middleware:
     - TracingMiddleware
     - BudgetControlMiddleware
     - TenantContextMiddleware
@@ -14,9 +22,4 @@ async def build_extra_agent_middlewares(
     - Mem0LongTermMemoryMiddleware
     """
 
-    _ = (user_id, agent_id, session_id)
-    # TODO: Resolve tenant_id from user/session context and inject middleware by
-    # tenant_id + user_id + agent_id + session_id.
-    # TODO: Return AgentScope MiddlewareBase instances after governance policies
-    # are implemented.
-    return []
+    return await build_platform_runtime_middlewares(user_id, agent_id, session_id)

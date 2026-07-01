@@ -3,6 +3,7 @@ import logging
 from agentscope.tool import FunctionTool, ToolBase
 
 from backend.app.config import Settings, get_settings
+from backend.app.platform.runtime_audit import run_runtime_tool_with_audit
 from backend.app.platform.runtime_permissions import (
     ensure_runtime_tool_allowed,
     is_runtime_tool_allowed,
@@ -29,14 +30,24 @@ def make_runtime_echo_callable(
     async def runtime_echo_text(text: str) -> dict[str, str]:
         """Return text only. No file, network, env, or command access."""
 
-        ensure_runtime_tool_allowed(
+        async def execute() -> dict[str, str]:
+            ensure_runtime_tool_allowed(
+                scoped_user_id,
+                agent_id,
+                session_id,
+                tool_name,
+                settings=settings,
+            )
+            return {"text": str(text)}
+
+        return await run_runtime_tool_with_audit(
+            settings,
             scoped_user_id,
             agent_id,
             session_id,
             tool_name,
-            settings=settings,
+            execute,
         )
-        return {"text": str(text)}
 
     return runtime_echo_text
 

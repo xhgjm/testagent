@@ -37,6 +37,8 @@ class Settings(BaseModel):
     platform_tool_trace_log_file: str = "logs/tool-calls-trace.jsonl"
     platform_enable_runtime_tools: bool = False
     platform_runtime_tools_mode: str = "disabled"
+    platform_enable_runtime_audit: bool = False
+    platform_runtime_audit_mode: str = "disabled"
 
     qdrant_host: str = "127.0.0.1"
     qdrant_port: int = 6333
@@ -98,6 +100,14 @@ def get_settings() -> Settings:
         ),
         platform_runtime_tools_mode=getenv(
             "PLATFORM_RUNTIME_TOOLS_MODE",
+            "disabled",
+        ),
+        platform_enable_runtime_audit=env_bool(
+            "PLATFORM_ENABLE_RUNTIME_AUDIT",
+            False,
+        ),
+        platform_runtime_audit_mode=getenv(
+            "PLATFORM_RUNTIME_AUDIT_MODE",
             "disabled",
         ),
         qdrant_host=getenv("QDRANT_HOST", "127.0.0.1"),

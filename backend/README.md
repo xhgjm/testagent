@@ -188,6 +188,21 @@ The new helper module is `backend/app/platform/runtime_permissions.py`. It also 
 
 Full smoke test: [../docs/phase2_3_4-runtime-permission-boundary.md](../docs/phase2_3_4-runtime-permission-boundary.md).
 
+## Phase 2.3.5 Runtime Audit / Tracing
+
+Phase 2.3.5 adds minimal runtime audit/tracing for the safe `runtime_echo_tool`.
+
+New modules:
+
+- `backend/app/platform/runtime_audit.py`
+- `backend/app/platform/runtime_middlewares.py`
+
+`backend/app/middlewares/factory.py` now delegates to the runtime middleware factory. Runtime middleware remains disabled by default and returns `[]` unless explicitly enabled.
+
+When runtime tools and runtime audit are both enabled, `runtime_echo_tool` writes structured records to the existing audit and trace JSONL files. The record includes `event_type=runtime_tool_call` and `source=agentscope_runtime`. Tool input text is not recorded.
+
+Full smoke test: [../docs/phase2_3_5-runtime-audit-middleware.md](../docs/phase2_3_5-runtime-audit-middleware.md).
+
 ## Current TODO
 
 - Smoke test Credential / Agent / Session / Message APIs through official Agent Service.
