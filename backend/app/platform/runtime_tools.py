@@ -9,6 +9,10 @@ from backend.app.platform.runtime_permissions import (
     is_runtime_tool_allowed,
     parse_scoped_user_id,
 )
+from backend.app.platform.runtime_workspace import (
+    RuntimeWorkspaceContext,
+    resolve_runtime_workspace,
+)
 from backend.app.platform.tools import get_registered_tool
 
 
@@ -23,9 +27,10 @@ def make_runtime_echo_callable(
     scoped_user_id: str,
     agent_id: str,
     session_id: str,
+    workspace_context: RuntimeWorkspaceContext,
     tool_name: str = RUNTIME_ECHO_TOOL_NAME,
 ):
-    """Create a safe echo callable with runtime permission bound in."""
+    """Create a safe echo callable with runtime permission and workspace bound in."""
 
     async def runtime_echo_text(text: str) -> dict[str, str]:
         """Return text only. No file, network, env, or command access."""
@@ -47,6 +52,7 @@ def make_runtime_echo_callable(
             session_id,
             tool_name,
             execute,
+            workspace_context=workspace_context,
         )
 
     return runtime_echo_text
@@ -57,6 +63,7 @@ def build_runtime_echo_tool(
     scoped_user_id: str,
     agent_id: str,
     session_id: str,
+    workspace_context: RuntimeWorkspaceContext,
 ) -> FunctionTool:
     """Build a safe AgentScope FunctionTool for runtime adapter smoke tests."""
 
@@ -66,6 +73,7 @@ def build_runtime_echo_tool(
             scoped_user_id,
             agent_id,
             session_id,
+            workspace_context,
         ),
         name=RUNTIME_ECHO_TOOL_NAME,
         description=(
@@ -110,8 +118,6 @@ async def _build_extra_agent_tools(
     agent_id: str,
     session_id: str,
 ) -> list[ToolBase]:
-    _ = session_id
-
     if not settings.platform_enable_runtime_tools:
         logger.debug("Runtime tools disabled by PLATFORM_ENABLE_RUNTIME_TOOLS.")
         return []
@@ -155,10 +161,38 @@ async def _build_extra_agent_tools(
         )
         return []
 
+    try:
+        workspace_context = resolve_runtime_workspace(
+            settings,
+            user_id,
+            agent_id,
+            session_id,
+            create=True,
+        )
+    except Exception:  # pylint: disable=broad-except
+        logger.exception(
+            "Runtime workspace resolve failed; returning no runtime tools.",
+        )
+        return []
+
+    if workspace_context is None:
+        logger.warning(
+            "Runtime workspace context unavailable; returning no runtime tools.",
+        )
+        return []
+
     logger.info(
         "Injecting safe runtime echo tool for tenant=%s user=%s agent=%s.",
         tenant_id,
         real_user_id,
         agent_id,
     )
-    return [build_runtime_echo_tool(settings, user_id, agent_id, session_id)]
+    return [
+        build_runtime_echo_tool(
+            settings,
+            user_id,
+            agent_id,
+            session_id,
+            workspace_context,
+        ),
+    ]

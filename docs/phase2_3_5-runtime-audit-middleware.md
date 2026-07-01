@@ -231,10 +231,18 @@ Then verify success and denied audit records. This phase does not require the mo
 
 ## Next Step: Phase 2.3.6
 
-Recommended next phase:
+Implemented next phase:
 
+- bind runtime tools to the platform workspace context
+- reuse the existing `tenant_id/user_id/agent_id/session_id` workspace resolver
+- add workspace fields to runtime audit/tracing records
+- keep runtime tools and runtime audit disabled by default
+- do not replace AgentScope `LocalWorkspaceManager` yet
+
+Recommended follow-up:
+
+- design custom WorkspaceManager alignment after runtime workspace context is stable
 - broaden runtime audit middleware after more AgentScope tool event shapes are verified
-- optionally wire AgentScope `PermissionContext` mapper from Phase 2.3.4
 - keep default runtime tools and runtime audit disabled
 - keep MCP and Skills disabled until governance is mature
 

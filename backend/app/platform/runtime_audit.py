@@ -12,6 +12,7 @@ from backend.app.platform.runtime_permissions import (
     RuntimeToolPermissionDenied,
     parse_scoped_user_id,
 )
+from backend.app.platform.runtime_workspace import RuntimeWorkspaceContext
 
 
 logger = logging.getLogger(__name__)
@@ -69,11 +70,12 @@ def build_runtime_audit_record(
     finished_at: str,
     duration_ms: int,
     error_code: str | None,
+    workspace_context: RuntimeWorkspaceContext | None = None,
 ) -> dict[str, Any]:
     parsed = parse_scoped_user_id(scoped_user_id)
     tenant_id = parsed[0] if parsed else "unknown"
     user_id = parsed[1] if parsed else "unknown"
-    return {
+    record: dict[str, Any] = {
         "trace_id": trace_id,
         "event_type": "runtime_tool_call",
         "source": "agentscope_runtime",
@@ -91,6 +93,18 @@ def build_runtime_audit_record(
         "duration_ms": duration_ms,
         "error_code": error_code,
     }
+    if workspace_context is not None:
+        record.update(
+            {
+                "workspace_path": workspace_context.workspace_path,
+                "workspace_exists": workspace_context.exists,
+                "workspace_created": workspace_context.created,
+                "workspace_isolation_strategy": (
+                    workspace_context.isolation_strategy
+                ),
+            },
+        )
+    return record
 
 
 async def run_runtime_tool_with_audit(
@@ -100,6 +114,8 @@ async def run_runtime_tool_with_audit(
     session_id: str,
     tool_name: str,
     call: Callable[[], Awaitable[Any]],
+    *,
+    workspace_context: RuntimeWorkspaceContext | None = None,
 ) -> Any:
     """Run a runtime tool and optionally write a structured audit record."""
 
@@ -130,6 +146,7 @@ async def run_runtime_tool_with_audit(
             finished_at=finished_at,
             duration_ms=duration_ms,
             error_code=error_code,
+            workspace_context=workspace_context,
         )
         try:
             write_runtime_tool_audit_record(settings, record)

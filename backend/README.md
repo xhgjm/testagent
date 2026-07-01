@@ -203,6 +203,32 @@ When runtime tools and runtime audit are both enabled, `runtime_echo_tool` write
 
 Full smoke test: [../docs/phase2_3_5-runtime-audit-middleware.md](../docs/phase2_3_5-runtime-audit-middleware.md).
 
+## Phase 2.3.6 Runtime Workspace Alignment
+
+Phase 2.3.6 binds platform workspace context to the experimental
+`runtime_echo_tool` path.
+
+New module:
+
+- `backend/app/platform/runtime_workspace.py`
+
+The runtime adapter now resolves workspace context with the same platform
+workspace resolver used by `/api/platform/workspaces/resolve`. The isolation
+strategy remains `tenant_id/user_id/agent_id/session_id`.
+
+Runtime audit records can include:
+
+- `workspace_path`
+- `workspace_exists`
+- `workspace_created`
+- `workspace_isolation_strategy`
+
+This phase does not replace AgentScope `LocalWorkspaceManager`, does not add a
+custom WorkspaceManager, and does not let `runtime_echo_tool` read or write
+workspace files.
+
+Full smoke test: [../docs/phase2_3_6-runtime-workspace-alignment.md](../docs/phase2_3_6-runtime-workspace-alignment.md).
+
 ## Current TODO
 
 - Smoke test Credential / Agent / Session / Message APIs through official Agent Service.
@@ -211,4 +237,4 @@ Full smoke test: [../docs/phase2_3_5-runtime-audit-middleware.md](../docs/phase2
 - Add DockerWorkspaceManager after local workspace flow is stable.
 - Add tenant-aware permission checks and audit middleware.
 - Implement `extra_agent_tools` adapter in a later Phase 2.3 step after verifying AgentScope 2.0.3 tool signatures.
-- Wire runtime audit/tracing middleware in Phase 2.3.5.
+- Design custom WorkspaceManager alignment after runtime workspace context is stable.
