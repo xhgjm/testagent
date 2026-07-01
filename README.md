@@ -10,6 +10,8 @@ User / Tenant -> Credential -> Agent -> Session -> Chat -> SSE Event Stream -> M
 
 Agent Service 已作为后端主入口接入。RAG Service、Long-term Memory、Agent Team、Tool、Permission、Middleware 等能力在第一阶段继续做清晰预留，后续逐步接入。
 
+Phase 1.5 新增平台 API facade。企业入口推荐使用 `/api/platform/...`，AgentScope 原生接口继续保留用于底层调试。
+
 ## Project Positioning
 
 - 平台名称：AgentScope Enterprise Multi-Tenant Agent Platform
@@ -18,6 +20,24 @@ Agent Service 已作为后端主入口接入。RAG Service、Long-term Memory、
 - 开发方式：本地 VS Code 开发，通过 Git 同步到 ECS 部署
 - 当前边界：先用 `X-User-ID` / `X-Tenant-ID` 模拟用户和租户身份，后续替换为 JWT / OAuth / 企业统一登录
 - 暂不接入：HiMarket。后续作为 API Gateway / 应用市场方向接入
+
+## Phase 1.5 Platform API
+
+企业用户推荐调用平台封装接口：
+
+- `GET /api/platform/overview`
+- `POST /api/platform/credentials`
+- `GET /api/platform/agents`
+- `POST /api/platform/agents`
+- `GET /api/platform/sessions?agent_id=...`
+- `POST /api/platform/sessions`
+- `POST /api/platform/chat`
+- `GET /api/platform/sessions/{session_id}/messages?agent_id=...`
+- `GET /api/platform/sessions/{session_id}/stream-url?agent_id=...`
+
+AgentScope 原生接口仍保留，用于底层调试。平台层通过 `scoped_user_id = tenant_id:user_id` 调用原生接口，实现基础租户隔离。例如外部请求 `X-Tenant-ID: tenantA`、`X-User-ID: userA`，内部转发给 AgentScope 时使用 `X-User-ID: tenantA:userA`。
+
+不要在请求示例、日志或代码中写入真实 API Key。文档只使用 `<YOUR_API_KEY>` 或环境变量占位。完整 smoke test 见 [docs/phase1_5-platform-api.md](docs/phase1_5-platform-api.md)。
 
 ## Why Not A Single RAG Bot
 
@@ -146,6 +166,7 @@ RAG 是企业 Agent 平台的一类能力，不是整个平台本身。本项目
 
 - Phase 0：环境和项目骨架。
 - Phase 1：Agent Service 主链路，接入 `create_app`，打通 User / Credential / Agent / Session / Chat / SSE / Message。
+- Phase 1.5：平台 API facade，基于 `tenant_id:user_id` 实现基础租户隔离。
 - Phase 2：Workspace + Tool + Permission，接入本地和 Docker Workspace，完善工具审计。
 - Phase 3：RAG Service，接入 KnowledgeBase、Document、Qdrant、BlobStore、Index worker。
 - Phase 4：Long-term Memory，按 Agent 策略启用长期记忆和敏感信息保护。

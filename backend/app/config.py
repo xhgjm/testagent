@@ -31,6 +31,7 @@ class Settings(BaseModel):
     frontend_host: str = "0.0.0.0"
     frontend_port: int = 3000
     backend_base_url: str = "http://127.0.0.1:8891"
+    agent_service_internal_base_url: str = "http://127.0.0.1:8891"
 
     qdrant_host: str = "127.0.0.1"
     qdrant_port: int = 6333
@@ -67,6 +68,10 @@ def get_settings() -> Settings:
         frontend_host=getenv("FRONTEND_HOST", "0.0.0.0"),
         frontend_port=int(getenv("FRONTEND_PORT", "3000")),
         backend_base_url=getenv("BACKEND_BASE_URL", "http://127.0.0.1:8891"),
+        agent_service_internal_base_url=getenv(
+            "AGENT_SERVICE_INTERNAL_BASE_URL",
+            "http://127.0.0.1:8891",
+        ),
         qdrant_host=getenv("QDRANT_HOST", "127.0.0.1"),
         qdrant_port=int(getenv("QDRANT_PORT", "6333")),
         blob_store_root=getenv("BLOB_STORE_ROOT", "/data/agent-platform/blobs"),

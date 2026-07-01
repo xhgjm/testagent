@@ -79,6 +79,26 @@ The following APIs are expected to come from AgentScope Agent Service:
 
 Check the generated OpenAPI page at `/docs` for exact paths and request schemas in the installed AgentScope 2.0.3 build.
 
+## Phase 1.5 Platform Facade
+
+Enterprise clients should use platform APIs under `/api/platform/...`:
+
+- `GET /api/platform/overview`
+- `POST /api/platform/credentials`
+- `GET /api/platform/agents`
+- `POST /api/platform/agents`
+- `GET /api/platform/sessions?agent_id=...`
+- `POST /api/platform/sessions`
+- `POST /api/platform/chat`
+- `GET /api/platform/sessions/{session_id}/messages?agent_id=...`
+- `GET /api/platform/sessions/{session_id}/stream-url?agent_id=...`
+
+The native AgentScope APIs remain available for low-level debugging. The platform facade forwards requests to native endpoints with `X-User-ID` rewritten as `tenant_id:user_id`, for example `tenantA:userA`.
+
+Do not log, return, or commit real API keys. Use `<YOUR_API_KEY>` or environment variables in examples.
+
+Full smoke test: [../docs/phase1_5-platform-api.md](../docs/phase1_5-platform-api.md).
+
 ## Current TODO
 
 - Smoke test Credential / Agent / Session / Message APIs through official Agent Service.

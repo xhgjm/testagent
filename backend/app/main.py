@@ -9,6 +9,7 @@ from backend.app.auth.current_user import CurrentUser, get_current_user
 from backend.app.config import Settings, get_settings
 from backend.app.memory.config import build_memory_plan
 from backend.app.middlewares.factory import build_extra_agent_middlewares
+from backend.app.platform.routes import router as platform_api_router
 from backend.app.platform_context import PlatformContext
 from backend.app.rag.config import build_rag_service_plan
 from backend.app.team.config import build_agent_team_plan
@@ -115,6 +116,7 @@ def create_platform_app(settings: Settings | None = None) -> FastAPI:
     # chain is validated.
 
     app.include_router(create_platform_router(settings))
+    app.include_router(platform_api_router)
     return app
 
 
