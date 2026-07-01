@@ -316,3 +316,29 @@ Recommended next phase:
 - keep default runtime tools disabled
 - keep permission checks from Phase 2.3.4
 - do not enable MCP or Skills until audit and permission boundaries are mature
+
+
+## ECS Smoke Test Result
+
+Date: 2026-07-01
+Port: 8891
+Result: Passed
+
+Verified:
+- Default configuration keeps runtime tools disabled.
+- build_extra_agent_tools returns [] by default.
+- Existing chat/session/message flow still works with runtime tools disabled.
+- With explicit runtime enablement and permission allow, adapter returns runtime_echo_tool.
+- runtime_echo_tool performs execution-time permission re-check.
+- After deleting the allow rule, the already constructed runtime callable refuses execution with RuntimeToolPermissionDenied.
+- The expected error_code is RUNTIME_PERMISSION_DENIED.
+- Test runtime_echo_tool allow rules were cleaned up after the smoke test.
+- No MCP, Skill, shell, file deletion, network access, or enterprise system integration is enabled.
+
+Evidence:
+- FIRST_CALL_OK {'text': 'first call should pass'}
+- SECOND_CALL_DENIED
+- ERROR_CODE RUNTIME_PERMISSION_DENIED
+
+Conclusion:
+Phase 2.3.4 runtime permission boundary passed ECS smoke test.
