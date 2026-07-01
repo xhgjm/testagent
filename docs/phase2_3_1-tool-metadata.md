@@ -180,3 +180,30 @@ or the ECS intranet/public IP as appropriate.
 ## Next Step
 
 Phase 2.3.2 should design and implement the `extra_agent_tools` adapter. That adapter should convert selected platform registry entries into AgentScope-native tools only after verifying the exact AgentScope 2.0.3 `ToolBase` or `FunctionTool` signatures in the installed environment.
+
+
+## ECS Smoke Test Result
+
+Date: 2026-07-01
+Port: 8891
+Result: Passed
+
+Verified:
+- /api/platform/overview returns phase-2.3.1.
+- /api/platform/overview includes tool_native_metadata=true.
+- /api/platform/tools returns native metadata fields:
+  - tool_name
+  - description
+  - native_type
+  - native_ref
+  - timeout_seconds
+  - enabled
+- echo_tool, time_tool, and slow_tool are registered as native_type=mock.
+- native_ref is null for current mock tools.
+- Backward-compatible fields name, input_schema, and default_timeout_seconds are still returned.
+- /api/platform/tools/{tool_name}/invoke remains compatible with the existing request body.
+- echo_tool invocation still works.
+- Permission, audit, and tracing behavior remains functional.
+
+Conclusion:
+Phase 2.3.1 tool native metadata passed ECS smoke test.
