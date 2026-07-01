@@ -1,16 +1,25 @@
 {
   "allow": [
     {
+      "rule_id": "tenantA-userA-echo",
       "tenant_id": "tenantA",
       "user_id": "userA",
       "agent_id": "*",
       "tool_name": "echo_tool"
     },
     {
+      "rule_id": "tenantA-userA-time",
       "tenant_id": "tenantA",
       "user_id": "userA",
       "agent_id": "*",
       "tool_name": "time_tool"
+    },
+    {
+      "rule_id": "tenantA-userA-slow",
+      "tenant_id": "tenantA",
+      "user_id": "userA",
+      "agent_id": "*",
+      "tool_name": "slow_tool"
     }
   ]
 }

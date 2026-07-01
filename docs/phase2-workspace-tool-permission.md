@@ -299,3 +299,26 @@ Phase 3 can add RAG Service. Before that, Phase 2 should be hardened with:
 - Audit retention and rotation.
 - Workspace file listing and cleanup policies.
 - Tool call tracing middleware.
+
+
+## ECS Smoke Test Result
+
+Date: 2026-07-01
+Port: 8891
+Result: Passed
+
+Verified:
+- /api/platform/tools returns echo_tool and time_tool.
+- /api/platform/workspaces/resolve returns isolated workspace path.
+- Workspace path includes tenant_id/user_id/agent_id/session_id isolation.
+- Allowed tool call succeeds when explicitly configured in PLATFORM_TOOL_PERMISSION_FILE.
+- Denied tool call is blocked by default-deny policy.
+- Both allowed and denied tool calls are written to JSONL audit log.
+- /api/platform/audit/tool-calls can query audit records.
+- Audit query is scoped by X-Tenant-ID and X-User-ID.
+- tenantA cannot see tenantB audit records.
+- tenantB cannot see tenantA audit records.
+- Phase 1.5 chat/session/message APIs still work after Phase 2 changes.
+
+Conclusion:
+Phase 2 Workspace + Tool + Permission + Audit passed ECS smoke test.

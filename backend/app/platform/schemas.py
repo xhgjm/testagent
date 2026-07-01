@@ -82,6 +82,7 @@ class ToolInfo(BaseModel):
     name: str
     description: str
     input_schema: dict[str, Any]
+    default_timeout_seconds: float
 
 
 class ToolListResponse(BaseModel):
@@ -93,15 +94,21 @@ class ToolInvokeRequest(BaseModel):
     agent_id: str
     session_id: str
     arguments: dict[str, Any] = Field(default_factory=dict)
+    timeout_seconds: float | None = Field(default=None, gt=0, le=60)
 
 
 class ToolInvokeResponse(BaseModel):
     tool_name: str
     allowed: bool
+    trace_id: str
+    status: str
+    duration_ms: int
+    error_code: str | None = None
     result: Any | None = None
 
 
 class ToolAuditRecord(BaseModel):
+    trace_id: str | None = None
     tenant_id: str
     user_id: str
     agent_id: str
@@ -109,8 +116,67 @@ class ToolAuditRecord(BaseModel):
     tool_name: str
     allowed: bool
     timestamp: str
+    status: str | None = None
+    started_at: str | None = None
+    finished_at: str | None = None
+    duration_ms: int | None = None
+    error_code: str | None = None
 
 
 class ToolAuditListResponse(BaseModel):
     records: list[dict[str, Any]]
     total: int
+
+
+class ToolPermissionRule(BaseModel):
+    rule_id: str
+    tenant_id: str
+    user_id: str
+    agent_id: str
+    tool_name: str
+
+
+class ToolPermissionCreateRequest(BaseModel):
+    agent_id: str = "*"
+    tool_name: str
+
+
+class ToolPermissionListResponse(BaseModel):
+    rules: list[ToolPermissionRule]
+    total: int
+
+
+class WorkspaceFileInfo(BaseModel):
+    path: str
+    size_bytes: int
+    modified_at: str
+    is_dir: bool = False
+
+
+class WorkspaceFileListResponse(BaseModel):
+    workspace_path: str
+    files: list[WorkspaceFileInfo]
+    total: int
+
+
+class WorkspaceCleanupRequest(BaseModel):
+    agent_id: str
+    session_id: str
+    max_age_days: float = Field(default=7, ge=0)
+    dry_run: bool = True
+
+
+class WorkspaceCleanupCandidate(BaseModel):
+    path: str
+    size_bytes: int
+    modified_at: str
+    age_days: float
+    deleted: bool = False
+
+
+class WorkspaceCleanupResponse(BaseModel):
+    workspace_path: str
+    dry_run: bool
+    candidates: list[WorkspaceCleanupCandidate]
+    total: int
+    deleted: int = 0

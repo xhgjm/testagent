@@ -14,6 +14,13 @@ def _audit_path(settings: Settings) -> Path:
     return path
 
 
+def _trace_path(settings: Settings) -> Path:
+    path = Path(settings.platform_tool_trace_log_file)
+    if not path.is_absolute():
+        path = Path.cwd().joinpath(path)
+    return path
+
+
 def append_tool_audit_record(
     settings: Settings,
     scoped_user: ScopedUser,
@@ -21,8 +28,16 @@ def append_tool_audit_record(
     session_id: str,
     tool_name: str,
     allowed: bool,
+    *,
+    trace_id: str | None = None,
+    status: str | None = None,
+    started_at: str | None = None,
+    finished_at: str | None = None,
+    duration_ms: int | None = None,
+    error_code: str | None = None,
 ) -> dict[str, Any]:
     record = {
+        "trace_id": trace_id,
         "tenant_id": scoped_user.tenant_id,
         "user_id": scoped_user.user_id,
         "agent_id": agent_id,
@@ -30,11 +45,22 @@ def append_tool_audit_record(
         "tool_name": tool_name,
         "allowed": allowed,
         "timestamp": datetime.now(UTC).isoformat(),
+        "status": status,
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "duration_ms": duration_ms,
+        "error_code": error_code,
     }
     path = _audit_path(settings)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    trace_path = _trace_path(settings)
+    trace_path.parent.mkdir(parents=True, exist_ok=True)
+    with trace_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+
     return record
 
 

@@ -14,6 +14,8 @@ Phase 1.5 新增平台 API facade。企业入口推荐使用 `/api/platform/...`
 
 Phase 2 新增 Workspace + Tool + Permission 雏形：平台可以解析并创建租户隔离 workspace，列出 mock tools，按默认 deny / 显式 allow 策略调用工具，并记录工具调用审计。
 
+Phase 2.1 继续加固：新增 Tool Permission Admin API、Workspace 文件列表和清理预览、工具调用超时、结构化 tracing。
+
 ## Project Positioning
 
 - 平台名称：AgentScope Enterprise Multi-Tenant Agent Platform
@@ -58,6 +60,21 @@ Phase 2 只实现企业能力雏形：
 - Audit Log：每次工具调用记录 JSONL 审计日志，包含 tenant、user、agent、session、tool、allowed/denied、timestamp。
 
 完整 smoke test 见 [docs/phase2-workspace-tool-permission.md](docs/phase2-workspace-tool-permission.md)。
+
+## Phase 2.1 Hardening
+
+新增平台接口：
+
+- `GET /api/platform/tool-permissions`
+- `POST /api/platform/tool-permissions`
+- `DELETE /api/platform/tool-permissions/{rule_id}`
+- `GET /api/platform/workspaces/files`
+- `POST /api/platform/workspaces/cleanup-preview`
+- `POST /api/platform/workspaces/cleanup`
+
+工具调用现在支持 `timeout_seconds`，每次调用都会返回或记录 `trace_id`，audit/tracing 记录包含 `status`、`duration_ms`、`error_code`。本阶段仍不接入外部 tracing 系统。
+
+完整 smoke test 见 [docs/phase2_1-hardening.md](docs/phase2_1-hardening.md)。
 
 ## Why Not A Single RAG Bot
 

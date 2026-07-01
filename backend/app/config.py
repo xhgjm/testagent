@@ -34,6 +34,7 @@ class Settings(BaseModel):
     agent_service_internal_base_url: str = "http://127.0.0.1:8891"
     platform_tool_permission_file: str = ""
     platform_tool_audit_log_file: str = "logs/tool-calls-audit.jsonl"
+    platform_tool_trace_log_file: str = "logs/tool-calls-trace.jsonl"
 
     qdrant_host: str = "127.0.0.1"
     qdrant_port: int = 6333
@@ -78,6 +79,10 @@ def get_settings() -> Settings:
         platform_tool_audit_log_file=getenv(
             "PLATFORM_TOOL_AUDIT_LOG_FILE",
             "logs/tool-calls-audit.jsonl",
+        ),
+        platform_tool_trace_log_file=getenv(
+            "PLATFORM_TOOL_TRACE_LOG_FILE",
+            "logs/tool-calls-trace.jsonl",
         ),
         qdrant_host=getenv("QDRANT_HOST", "127.0.0.1"),
         qdrant_port=int(getenv("QDRANT_PORT", "6333")),

@@ -129,6 +129,29 @@ Tool audit is written to `PLATFORM_TOOL_AUDIT_LOG_FILE`, defaulting to `logs/too
 
 Full smoke test: [../docs/phase2-workspace-tool-permission.md](../docs/phase2-workspace-tool-permission.md).
 
+## Phase 2.1 Hardening
+
+Phase 2.1 adds:
+
+- Tool Permission Admin API
+- Workspace file listing
+- Workspace cleanup preview and safe cleanup
+- Tool invocation timeout
+- Structured tracing fields in audit records
+
+New APIs:
+
+- `GET /api/platform/tool-permissions`
+- `POST /api/platform/tool-permissions`
+- `DELETE /api/platform/tool-permissions/{rule_id}`
+- `GET /api/platform/workspaces/files`
+- `POST /api/platform/workspaces/cleanup-preview`
+- `POST /api/platform/workspaces/cleanup`
+
+Tool calls return or record `trace_id`, `status`, `duration_ms`, and `error_code`. Traces are written to JSONL through `PLATFORM_TOOL_TRACE_LOG_FILE`.
+
+Full smoke test: [../docs/phase2_1-hardening.md](../docs/phase2_1-hardening.md).
+
 ## Current TODO
 
 - Smoke test Credential / Agent / Session / Message APIs through official Agent Service.
