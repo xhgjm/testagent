@@ -48,6 +48,13 @@ async def slow_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     return {"slept_seconds": sleep_seconds}
 
 
+async def runtime_echo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return a text value for runtime adapter smoke tests."""
+
+    text = arguments.get("text", "")
+    return {"text": str(text)}
+
+
 TOOLS: dict[str, RegisteredTool] = {
     "echo_tool": RegisteredTool(
         name="echo_tool",
@@ -79,6 +86,24 @@ TOOLS: dict[str, RegisteredTool] = {
         },
         handler=slow_tool,
         default_timeout_seconds=1.0,
+        native_type="mock",
+        native_ref=None,
+        enabled=True,
+    ),
+    "runtime_echo_tool": RegisteredTool(
+        name="runtime_echo_tool",
+        description=(
+            "Returns the provided text. Safe mock tool reserved for runtime "
+            "adapter smoke tests."
+        ),
+        input_schema={
+            "type": "object",
+            "properties": {"text": {"type": "string"}},
+            "required": ["text"],
+            "additionalProperties": False,
+        },
+        handler=runtime_echo_tool,
+        default_timeout_seconds=5.0,
         native_type="mock",
         native_ref=None,
         enabled=True,

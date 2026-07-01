@@ -1,12 +1,19 @@
+from agentscope.tool import ToolBase
+
+from backend.app.platform.runtime_tools import (
+    build_extra_agent_tools as build_platform_runtime_tools,
+)
+
+
 async def build_extra_agent_tools(
     user_id: str,
     agent_id: str,
     session_id: str,
-) -> list:
+) -> list[ToolBase]:
     """Build tenant-aware tools for an AgentScope agent session.
 
-    First-stage MVP returns no tools. Later versions should inject tools by
-    tenant, user_id, agent_id, and session_id.
+    Delegates to the platform runtime adapter. The adapter is closed by
+    default and returns [] unless explicitly enabled by configuration.
 
     Examples:
     - CRM read-only lookup tool
@@ -16,9 +23,4 @@ async def build_extra_agent_tools(
     - Workspace file inspection tool
     """
 
-    _ = (user_id, agent_id, session_id)
-    # TODO: Resolve tenant_id from user/session context and inject tools by
-    # tenant_id + user_id + agent_id + session_id.
-    # TODO: Return AgentScope-compatible tool instances after enterprise
-    # permission and audit policies are in place.
-    return []
+    return await build_platform_runtime_tools(user_id, agent_id, session_id)

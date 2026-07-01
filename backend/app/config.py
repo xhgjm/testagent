@@ -35,6 +35,8 @@ class Settings(BaseModel):
     platform_tool_permission_file: str = ""
     platform_tool_audit_log_file: str = "logs/tool-calls-audit.jsonl"
     platform_tool_trace_log_file: str = "logs/tool-calls-trace.jsonl"
+    platform_enable_runtime_tools: bool = False
+    platform_runtime_tools_mode: str = "disabled"
 
     qdrant_host: str = "127.0.0.1"
     qdrant_port: int = 6333
@@ -53,6 +55,12 @@ class Settings(BaseModel):
 def get_settings() -> Settings:
     if load_dotenv is not None:
         load_dotenv()
+
+    def env_bool(name: str, default: bool = False) -> bool:
+        value = getenv(name)
+        if value is None:
+            return default
+        return value.strip().lower() in {"1", "true", "yes", "on"}
 
     return Settings(
         app_name=getenv("APP_NAME", "agent-platform"),
@@ -83,6 +91,14 @@ def get_settings() -> Settings:
         platform_tool_trace_log_file=getenv(
             "PLATFORM_TOOL_TRACE_LOG_FILE",
             "logs/tool-calls-trace.jsonl",
+        ),
+        platform_enable_runtime_tools=env_bool(
+            "PLATFORM_ENABLE_RUNTIME_TOOLS",
+            False,
+        ),
+        platform_runtime_tools_mode=getenv(
+            "PLATFORM_RUNTIME_TOOLS_MODE",
+            "disabled",
         ),
         qdrant_host=getenv("QDRANT_HOST", "127.0.0.1"),
         qdrant_port=int(getenv("QDRANT_PORT", "6333")),
