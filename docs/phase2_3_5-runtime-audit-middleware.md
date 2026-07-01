@@ -237,3 +237,36 @@ Recommended next phase:
 - optionally wire AgentScope `PermissionContext` mapper from Phase 2.3.4
 - keep default runtime tools and runtime audit disabled
 - keep MCP and Skills disabled until governance is mature
+
+
+## ECS Smoke Test Result
+
+Date: 2026-07-01
+Port: 8891
+Result: Passed
+
+Verified:
+- runtime_echo_tool success execution writes a runtime audit record.
+- Runtime audit record includes event_type=runtime_tool_call.
+- Runtime audit record includes source=agentscope_runtime.
+- Success record has allowed=true, status=success, error_code=null.
+- After deleting the allow rule, the same runtime callable is denied by runtime permission re-check.
+- Denied record has allowed=false, status=denied, error_code=RUNTIME_PERMISSION_DENIED.
+- Runtime audit records include trace_id, started_at, finished_at, and duration_ms.
+- Runtime audit records do not include sensitive input text.
+- Existing /api/platform/audit/tool-calls can query runtime audit records.
+- Tenant isolation works: tenantB cannot see tenantA runtime audit records.
+- No MCP, Skill, shell, file deletion, network access, or enterprise system integration is enabled.
+
+Evidence:
+- FIRST_CALL_OK {'text': 'first call should pass'}
+- SECOND_CALL_DENIED
+- ERROR_CODE RUNTIME_PERMISSION_DENIED
+- RUNTIME_AUDIT_COUNT 2
+- success: allowed=true, status=success, error_code=null
+- denied: allowed=false, status=denied, error_code=RUNTIME_PERMISSION_DENIED
+- has_sensitive_text=false
+- tenantB query returned total=0
+
+Conclusion:
+Phase 2.3.5 runtime audit/tracing passed ECS smoke test.
