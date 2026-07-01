@@ -175,6 +175,19 @@ The current mock tools are still safe local tools:
 
 Full smoke test: [../docs/phase2_3_1-tool-metadata.md](../docs/phase2_3_1-tool-metadata.md).
 
+## Phase 2.3.4 Runtime Permission Boundary
+
+Phase 2.3.4 adds the minimum runtime permission boundary for the experimental `runtime_echo_tool`.
+
+Runtime tools remain disabled by default. When explicitly enabled, the adapter now has two permission layers:
+
+- Injection-time filter: no platform allow rule means no runtime tool is injected.
+- Execution-time check: the bound runtime tool callable checks platform permission again before returning text.
+
+The new helper module is `backend/app/platform/runtime_permissions.py`. It also includes an experimental AgentScope `PermissionRule` mapper helper, but this mapper is not wired into AgentScope `PermissionContext` yet.
+
+Full smoke test: [../docs/phase2_3_4-runtime-permission-boundary.md](../docs/phase2_3_4-runtime-permission-boundary.md).
+
 ## Current TODO
 
 - Smoke test Credential / Agent / Session / Message APIs through official Agent Service.
@@ -183,3 +196,4 @@ Full smoke test: [../docs/phase2_3_1-tool-metadata.md](../docs/phase2_3_1-tool-m
 - Add DockerWorkspaceManager after local workspace flow is stable.
 - Add tenant-aware permission checks and audit middleware.
 - Implement `extra_agent_tools` adapter in a later Phase 2.3 step after verifying AgentScope 2.0.3 tool signatures.
+- Wire runtime audit/tracing middleware in Phase 2.3.5.

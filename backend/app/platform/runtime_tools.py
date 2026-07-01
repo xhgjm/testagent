@@ -3,8 +3,11 @@ import logging
 from agentscope.tool import FunctionTool, ToolBase
 
 from backend.app.config import Settings, get_settings
-from backend.app.platform.permissions import is_tool_allowed
-from backend.app.platform.security import ScopedUser
+from backend.app.platform.runtime_permissions import (
+    ensure_runtime_tool_allowed,
+    is_runtime_tool_allowed,
+    parse_scoped_user_id,
+)
 from backend.app.platform.tools import get_registered_tool
 
 
@@ -14,26 +17,45 @@ RUNTIME_ECHO_TOOL_NAME = "runtime_echo_tool"
 ENABLED_MOCK_MODES = {"mock", "mock_safe", "runtime_echo"}
 
 
-def parse_scoped_user_id(scoped_user_id: str) -> tuple[str, str] | None:
-    """Parse the platform scoped user id format: tenant_id:user_id."""
+def make_runtime_echo_callable(
+    settings: Settings,
+    scoped_user_id: str,
+    agent_id: str,
+    session_id: str,
+    tool_name: str = RUNTIME_ECHO_TOOL_NAME,
+):
+    """Create a safe echo callable with runtime permission bound in."""
 
-    tenant_id, separator, user_id = scoped_user_id.partition(":")
-    if not separator or not tenant_id.strip() or not user_id.strip():
-        return None
-    return tenant_id.strip(), user_id.strip()
+    async def runtime_echo_text(text: str) -> dict[str, str]:
+        """Return text only. No file, network, env, or command access."""
+
+        ensure_runtime_tool_allowed(
+            scoped_user_id,
+            agent_id,
+            session_id,
+            tool_name,
+            settings=settings,
+        )
+        return {"text": str(text)}
+
+    return runtime_echo_text
 
 
-async def runtime_echo_text(text: str) -> dict[str, str]:
-    """Return text only. No file, network, env, or command access."""
-
-    return {"text": str(text)}
-
-
-def build_runtime_echo_tool() -> FunctionTool:
+def build_runtime_echo_tool(
+    settings: Settings,
+    scoped_user_id: str,
+    agent_id: str,
+    session_id: str,
+) -> FunctionTool:
     """Build a safe AgentScope FunctionTool for runtime adapter smoke tests."""
 
     return FunctionTool(
-        func=runtime_echo_text,
+        func=make_runtime_echo_callable(
+            settings,
+            scoped_user_id,
+            agent_id,
+            session_id,
+        ),
         name=RUNTIME_ECHO_TOOL_NAME,
         description=(
             "Return the provided text. Safe runtime smoke-test tool with no "
@@ -104,22 +126,18 @@ async def _build_extra_agent_tools(
         return []
 
     tenant_id, real_user_id = parsed_user
-    scoped_user = ScopedUser(
-        tenant_id=tenant_id,
-        user_id=real_user_id,
-        scoped_user_id=user_id,
-    )
 
     tool = get_registered_tool(RUNTIME_ECHO_TOOL_NAME)
     if tool is None or not tool.enabled:
         logger.debug("Runtime echo tool is not registered or disabled.")
         return []
 
-    if not is_tool_allowed(
-        settings,
-        scoped_user,
+    if not is_runtime_tool_allowed(
+        user_id,
         agent_id,
+        session_id,
         RUNTIME_ECHO_TOOL_NAME,
+        settings=settings,
     ):
         logger.debug(
             "Runtime echo tool not injected because permission denied.",
@@ -132,4 +150,4 @@ async def _build_extra_agent_tools(
         real_user_id,
         agent_id,
     )
-    return [build_runtime_echo_tool()]
+    return [build_runtime_echo_tool(settings, user_id, agent_id, session_id)]

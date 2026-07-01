@@ -97,7 +97,9 @@ The adapter injects `runtime_echo_tool` only when all conditions are true:
 - `runtime_echo_tool` is registered and enabled
 - platform permission JSON explicitly allows the current `tenant_id`, `user_id`, `agent_id`, and `tool_name=runtime_echo_tool`
 
-This phase only performs injection-time filtering. It does not implement AgentScope `PermissionRule` mapping and does not implement runtime second permission checks. Those are required before production usage.
+Phase 2.3.3 only performed injection-time filtering. Phase 2.3.4 adds a second execution-time permission check for `runtime_echo_tool`, so a previously injected tool is denied if its allow rule is later removed.
+
+AgentScope `PermissionRule` mapping remains experimental and is not connected to `PermissionContext` yet.
 
 ## Audit / Tracing Behavior
 
@@ -261,15 +263,15 @@ Then reuse the Phase 1.5 smoke test to confirm chat/session/message behavior is 
 - The adapter only receives `user_id`, `agent_id`, and `session_id`; tenant/user are parsed from scoped `tenant_id:user_id`.
 - JSON permission files are still not production-grade concurrent policy storage.
 
-## Next Step: Phase 2.3.4
+## Phase 2.3.4 Follow-Up
 
-Recommended next phase:
+Phase 2.3.4 adds:
 
-- Implement platform permission rule to AgentScope `PermissionRule` mapper.
-- Add runtime second permission check.
-- Keep ASK mode disabled for enterprise backend usage.
-- Preserve default deny.
-- Continue avoiding MCP, Skills, shell, system commands, file deletion, and real enterprise tools until governance is complete.
+- `backend/app/platform/runtime_permissions.py`
+- runtime execution-time permission check for `runtime_echo_tool`
+- experimental platform rule to AgentScope `PermissionRule` helper
+
+Full details: [phase2_3_4-runtime-permission-boundary.md](phase2_3_4-runtime-permission-boundary.md).
 
 
 ## ECS Smoke Test Result
