@@ -349,3 +349,29 @@ http://127.0.0.1:8891
 - Cleanup can delete files only when `dry_run=false`; keep default `dry_run=true` for demos.
 - Trace logs are JSONL files, not OpenTelemetry.
 - Mock tools only. No shell, no system command execution, no real enterprise integrations.
+
+
+
+## ECS Smoke Test Result
+
+Date: 2026-07-01
+Port: 8891
+Result: Passed
+
+Verified:
+- /api/platform/tool-permissions can list, create, and delete permission rules.
+- Default-deny permission policy works.
+- Explicit allow rule enables tool invocation.
+- Removing allow rule restores deny behavior.
+- /api/platform/workspaces/resolve returns isolated workspace path.
+- /api/platform/workspaces/files returns files only from the current workspace.
+- cleanup-preview works with dry_run=true and does not delete files.
+- slow_tool can trigger TOOL_TIMEOUT.
+- allowed, denied, and timeout tool calls are written to audit JSONL.
+- New Phase 2.1 audit records include trace_id, status, started_at, finished_at, duration_ms, and error_code.
+- audit query supports filtering by tool_name and allowed.
+- audit query is scoped by X-Tenant-ID and X-User-ID.
+- Phase 1.5 chat/session/message APIs still work.
+
+Conclusion:
+Phase 2.1 platform hardening passed ECS smoke test.
