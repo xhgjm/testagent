@@ -327,3 +327,37 @@ Recommended next phase:
 - keep runtime tools disabled by default
 - keep MCP and Skills disabled until permission, audit, and workspace
   governance are mature
+
+
+## ECS Smoke Test Result
+
+Date: 2026-07-01
+Port: 8891
+Result: Passed
+
+Verified:
+- Runtime workspace path follows tenant_id/user_id/agent_id/session_id.
+- Runtime workspace path is under /data/agent-platform/workspaces.
+- Runtime workspace path is scoped as tenantA/userA/<agent_id>/<session_id>.
+- Runtime workspace context includes tenant_id, user_id, scoped_user_id, agent_id, session_id, workspace_path, exists, created, and isolation_strategy.
+- runtime_echo_tool still does not read or write workspace files.
+- runtime_echo_tool does not expose workspace_path to model/tool output.
+- Success runtime audit includes workspace_path, workspace_exists, workspace_created, and workspace_isolation_strategy.
+- Denied runtime audit also includes workspace fields.
+- Runtime audit does not include sensitive input text.
+- Old audit records remain readable even when they do not contain workspace fields.
+- No MCP, Skill, shell, file deletion, network access, or enterprise system integration is enabled.
+
+Evidence:
+- WORKSPACE_PATH /data/agent-platform/workspaces/tenantA/userA/bf62b14f56b947b8915dd37a7f12aadb/phase236-workspace-smoke-1782901944
+- WORKSPACE_EXISTS True
+- WORKSPACE_CREATED True
+- WORKSPACE_STRATEGY tenant_id/user_id/agent_id/session_id
+- FIRST_CALL_OK {'text': 'first call should pass'}
+- SECOND_CALL_DENIED
+- ERROR_CODE RUNTIME_PERMISSION_DENIED
+- success audit includes workspace_path and has_sensitive_text=False
+- denied audit includes workspace_path and has_sensitive_text=False
+
+Conclusion:
+Phase 2.3.6 runtime workspace alignment passed ECS smoke test.
