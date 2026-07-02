@@ -114,9 +114,9 @@ PLATFORM_RUNTIME_AUDIT_MODE=disabled
 
 只有显式开启 mock mode，并且平台 permission JSON 存在 allow 规则时，才会注入安全 mock 工具 `runtime_echo_tool`。该工具不读写文件、不访问网络、不执行系统命令、不接 MCP / Skill / 企业系统。
 
-## 回归脚本
+## smoke test 脚本
 
-Phase 2.4 runtime governance 回归入口：
+Phase 2.4 runtime governance smoke test 入口：
 
 ```bash
 python scripts/smoke_phase2_4_runtime_governance.py
@@ -126,8 +126,8 @@ python scripts/smoke_phase2_4_runtime_governance.py
 
 ## 当前 TODO
 
-- 继续通过官方 Agent Service 冒烟验证 Credential / Agent / Session / Message。
-- 继续冒烟验证 Chat 和 SSE 事件流。
+- 继续通过官方 Agent Service 执行 Credential / Agent / Session / Message smoke test。
+- 继续执行 Chat 和 SSE 事件流 smoke test。
 - 如果 ECS Redis 需要密码或 TLS，补充 Redis 连接配置。
 - 本地 workspace 流程稳定后，再评估 DockerWorkspaceManager。
 - runtime tools 和 runtime audit 默认保持关闭。
