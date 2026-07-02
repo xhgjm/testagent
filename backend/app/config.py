@@ -39,6 +39,11 @@ class Settings(BaseModel):
     platform_runtime_tools_mode: str = "disabled"
     platform_enable_runtime_audit: bool = False
     platform_runtime_audit_mode: str = "disabled"
+    platform_enable_rag: bool = False
+    platform_rag_mode: str = "disabled"
+    platform_rag_native_base_url: str = ""
+    platform_rag_isolation_strategy: str = "collection_per_kb"
+    platform_rag_enable_index_worker: bool = False
 
     qdrant_host: str = "127.0.0.1"
     qdrant_port: int = 6333
@@ -109,6 +114,17 @@ def get_settings() -> Settings:
         platform_runtime_audit_mode=getenv(
             "PLATFORM_RUNTIME_AUDIT_MODE",
             "disabled",
+        ),
+        platform_enable_rag=env_bool("PLATFORM_ENABLE_RAG", False),
+        platform_rag_mode=getenv("PLATFORM_RAG_MODE", "disabled"),
+        platform_rag_native_base_url=getenv("PLATFORM_RAG_NATIVE_BASE_URL", ""),
+        platform_rag_isolation_strategy=getenv(
+            "PLATFORM_RAG_ISOLATION_STRATEGY",
+            "collection_per_kb",
+        ),
+        platform_rag_enable_index_worker=env_bool(
+            "PLATFORM_RAG_ENABLE_INDEX_WORKER",
+            False,
         ),
         qdrant_host=getenv("QDRANT_HOST", "127.0.0.1"),
         qdrant_port=int(getenv("QDRANT_PORT", "6333")),

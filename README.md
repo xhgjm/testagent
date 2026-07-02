@@ -2,7 +2,7 @@
 
 本项目基于 AgentScope 2.0.3，目标是建设一个企业级多租户、多用户、多 Agent、多 Session 的 Agent 平台底座。
 
-当前阶段：Phase 3.0 RAG Service Architecture Alignment。Phase 2 的 Workspace、Tool、Permission、Audit、Tracing、runtime tool adapter、runtime permission boundary、runtime audit、runtime workspace alignment 和 WorkspaceManager alignment design 已完成收口。Phase 3.0 只做 AgentScope RAG Service 架构对齐和实施拆分，尚未启用真实 RAG、Qdrant、embedding、BlobStore 或 chat RAG。
+当前阶段：Phase 3.1 RAG Config Skeleton。Phase 2 的 Workspace、Tool、Permission、Audit、Tracing、runtime tool adapter、runtime permission boundary、runtime audit、runtime workspace alignment 和 WorkspaceManager alignment design 已完成收口。Phase 3.0 已完成 AgentScope RAG Service 架构对齐，Phase 3.1 只增加 RAG 配置骨架和安全状态展示，尚未启用真实 RAG、Qdrant、embedding、BlobStore、index worker 或 chat RAG。
 
 平台主链路是：
 
@@ -275,6 +275,30 @@ Phase 3.0 已完成 AgentScope 2.0.3 RAG 能力核验和平台架构对齐设计
 
 Phase 3.0 不新增 RAG API，不启用 RAG runtime，不部署 Qdrant，不修改 `main.py` 主链路。后续 Phase 3.1 将先做 RAG config skeleton，并保持默认关闭。
 
+### Phase 3.1：RAG Config Skeleton
+
+Phase 3.1 新增 RAG 配置项、配置状态解析和 `/api/platform/overview` 能力展示。
+
+新增配置：
+
+```env
+PLATFORM_ENABLE_RAG=false
+PLATFORM_RAG_MODE=disabled
+PLATFORM_RAG_NATIVE_BASE_URL=
+PLATFORM_RAG_ISOLATION_STRATEGY=collection_per_kb
+PLATFORM_RAG_ENABLE_INDEX_WORKER=false
+```
+
+`features.rag.effective_enabled` 表示真实 RAG runtime 是否已经接线。Phase 3.1 中它始终为 `false`，`features.rag.runtime_registered` 也始终为 `false`，即使 `PLATFORM_ENABLE_RAG=true`。这能保证配置实验不会误启用 KnowledgeBase、BlobStore、Qdrant 或 index worker。
+
+Phase 3.1 固定规则：`PLATFORM_RAG_ENABLE_INDEX_WORKER=true` 会被判定为 `misconfigured`，并保持 `effective_enabled=false`、`runtime_registered=false`。
+
+Phase 3.1 离线 smoke test：
+
+```bash
+python scripts/smoke_phase3_1_rag_config.py
+```
+
 ## 核心接口
 
 ### 平台主链路接口
@@ -331,6 +355,12 @@ PLATFORM_ENABLE_RUNTIME_TOOLS=false
 PLATFORM_RUNTIME_TOOLS_MODE=disabled
 PLATFORM_ENABLE_RUNTIME_AUDIT=false
 PLATFORM_RUNTIME_AUDIT_MODE=disabled
+
+PLATFORM_ENABLE_RAG=false
+PLATFORM_RAG_MODE=disabled
+PLATFORM_RAG_NATIVE_BASE_URL=
+PLATFORM_RAG_ISOLATION_STRATEGY=collection_per_kb
+PLATFORM_RAG_ENABLE_INDEX_WORKER=false
 ```
 
 
@@ -440,6 +470,14 @@ python scripts/smoke_phase2_4_runtime_governance.py
 - workspace 字段完整
 - tenantA / tenantB 隔离正常
 
+Phase 3.1 RAG config skeleton smoke test：
+
+```bash
+python scripts/smoke_phase3_1_rag_config.py
+```
+
+该脚本不会启动 server，不访问网络，不读写真实 `.env`。它验证 RAG 默认关闭、显式请求时仍未接线、非法配置 fail closed，以及状态输出不泄露 RAG native base URL。
+
 ## 文档索引
 
 ### 架构和部署
@@ -468,6 +506,7 @@ python scripts/smoke_phase2_4_runtime_governance.py
 - [docs/phase2_3_7-workspace-manager-alignment-design.md](docs/phase2_3_7-workspace-manager-alignment-design.md)：WorkspaceManager 对齐设计
 - [docs/phase2_4-runtime-tool-governance-closure.md](docs/phase2_4-runtime-tool-governance-closure.md)：Phase 2 runtime governance 收口
 - [docs/phase3_0-rag-service-architecture-alignment.md](docs/phase3_0-rag-service-architecture-alignment.md)：Phase 3.0 RAG Service 架构对齐
+- [docs/phase3_1-rag-config-skeleton.md](docs/phase3_1-rag-config-skeleton.md)：Phase 3.1 RAG 配置 skeleton
 
 ## 安全边界
 
@@ -480,6 +519,7 @@ python scripts/smoke_phase2_4_runtime_governance.py
 - 不接 MCP / Skill / 真实企业系统。
 - 不实现 custom WorkspaceManager。
 - 不启用真实 RAG runtime。
+- RAG config skeleton 只展示状态，不创建 KnowledgeBaseManager、BlobStore、VectorStore 或 index worker。
 - 不把 RAG 直接做成 runtime tool。
 - 不修改官方 AgentScope 源码。
 - JSON permission/audit 文件不是生产级并发存储，只作为 MVP skeleton 和 smoke test / regression 基础。
@@ -496,7 +536,8 @@ python scripts/smoke_phase2_4_runtime_governance.py
 - [x] 完成 Workspace / Tool / Permission / Audit 雏形。
 - [x] 完成 runtime tool governance 收口。
 - [x] Phase 3.0 完成 RAG Service 架构对齐设计。
-- [ ] Phase 3.1 接入 RAG config skeleton，默认关闭。
+- [x] Phase 3.1 接入 RAG config skeleton，默认关闭。
+- [ ] Phase 3.2 接入 KnowledgeBase facade skeleton。
 - [ ] Phase 4 接入 Long-term Memory。
 - [ ] Phase 5 接入 Agent Team。
 

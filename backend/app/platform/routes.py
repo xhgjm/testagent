@@ -56,6 +56,7 @@ from backend.app.platform.workspace import (
     ensure_workspace_path,
     list_workspace_files,
 )
+from backend.app.rag.config import build_rag_service_plan
 
 
 router = APIRouter(prefix="/api/platform", tags=["platform-api"])
@@ -66,10 +67,13 @@ def get_native_client(settings: Settings = Depends(get_settings)) -> AgentScopeN
 
 
 @router.get("/overview", response_model=PlatformOverviewResponse)
-async def platform_overview() -> PlatformOverviewResponse:
+async def platform_overview(
+    settings: Settings = Depends(get_settings),
+) -> PlatformOverviewResponse:
+    rag_plan = build_rag_service_plan(settings)
     return PlatformOverviewResponse(
         platform="agent-platform",
-        phase="phase-2.3.1",
+        phase="phase-3.1",
         agent_service="agentscope",
         features={
             "tenant_isolation": True,
@@ -90,7 +94,19 @@ async def platform_overview() -> PlatformOverviewResponse:
             "tool_native_metadata": True,
             "workspace_files": True,
             "workspace_cleanup": "dry-run by default",
-            "rag": "reserved for phase-3",
+            "rag": rag_plan.model_dump(),
+            "rag_config_skeleton": True,
+            "rag_requested_enabled": rag_plan.requested_enabled,
+            "rag_effective_enabled": rag_plan.effective_enabled,
+            "rag_mode": rag_plan.mode,
+            "rag_native_base_url_configured": (
+                rag_plan.native_base_url_configured
+            ),
+            "rag_runtime_registered": rag_plan.runtime_registered,
+            "rag_isolation_strategy": rag_plan.isolation_strategy,
+            "rag_index_worker_requested": rag_plan.index_worker_requested,
+            "rag_status": rag_plan.status,
+            "rag_issues": list(rag_plan.issues),
             "memory": "reserved for phase-4",
             "agent_team": "reserved for phase-5",
         },

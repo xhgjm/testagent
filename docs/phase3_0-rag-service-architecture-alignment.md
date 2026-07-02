@@ -223,7 +223,7 @@ pending, parsing, chunking, indexing, ready, error
 - Phase 2.1：permission admin、workspace files / cleanup、tool timeout、structured tracing。
 - Phase 2.3：runtime tool adapter、runtime permission、runtime audit、runtime workspace，默认全部关闭。
 - Phase 2.4：runtime governance closure。
-- `backend/app/rag/config.py`：已有 `RagServicePlan(enabled=False, ...)` 预留。
+- `backend/app/rag/config.py`：已有 `RagConfigStatus(effective_enabled=False, runtime_registered=False, ...)` 配置骨架。
 - `main.py`：已把 RAG 参数显式传给 `create_app`，当前均为 `None`，没有启用真实 RAG。
 
 缺失能力：
