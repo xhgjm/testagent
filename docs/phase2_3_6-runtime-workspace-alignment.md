@@ -321,9 +321,11 @@ This phase keeps existing APIs unchanged:
 
 Recommended next phase:
 
-- design custom WorkspaceManager alignment options
-- decide whether AgentScope runtime workspace should be fully delegated to the
+- run runtime tool full regression for Phase 2.3.3 through Phase 2.3.6
+- design AgentScope WorkspaceManager alignment options
+- decide whether AgentScope runtime workspace should later be delegated to the
   platform resolver
+- do not directly implement a custom WorkspaceManager in Phase 2.3.7
 - keep runtime tools disabled by default
 - keep MCP and Skills disabled until permission, audit, and workspace
   governance are mature

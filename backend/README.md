@@ -229,6 +229,32 @@ workspace files.
 
 Full smoke test: [../docs/phase2_3_6-runtime-workspace-alignment.md](../docs/phase2_3_6-runtime-workspace-alignment.md).
 
+## Phase 2.3.7 Runtime Regression And WorkspaceManager Design
+
+Phase 2.3.7 adds a repeatable local runtime regression script and an
+AgentScope WorkspaceManager alignment design.
+
+New files:
+
+- `scripts/smoke_phase2_3_7_runtime_tools.py`
+- `docs/phase2_3_7-runtime-tool-full-regression.md`
+- `docs/phase2_3_7-workspace-manager-alignment-design.md`
+
+Run the smoke script locally:
+
+```bash
+python scripts/smoke_phase2_3_7_runtime_tools.py
+```
+
+The script uses temporary permission, audit, trace, and workspace files. It
+does not rely on real `.env`, does not start a server, does not access network,
+and does not connect MCP or Skills.
+
+AgentScope 2.0.3 `LocalWorkspaceManager` was verified to use
+`basedir/agent_id` for local workdirs. The platform resolver uses
+`basedir/tenant_id/user_id/agent_id/session_id`. This phase documents the
+boundary and does not replace `LocalWorkspaceManager`.
+
 ## Current TODO
 
 - Smoke test Credential / Agent / Session / Message APIs through official Agent Service.
@@ -236,5 +262,5 @@ Full smoke test: [../docs/phase2_3_6-runtime-workspace-alignment.md](../docs/pha
 - Add Redis password / TLS options if the ECS Redis requires them.
 - Add DockerWorkspaceManager after local workspace flow is stable.
 - Add tenant-aware permission checks and audit middleware.
-- Implement `extra_agent_tools` adapter in a later Phase 2.3 step after verifying AgentScope 2.0.3 tool signatures.
-- Design custom WorkspaceManager alignment after runtime workspace context is stable.
+- Keep runtime tool and runtime audit defaults closed until Phase 2.4 review.
+- Decide whether custom WorkspaceManager is needed after Phase 2.4 / Phase 3 RAG design.
