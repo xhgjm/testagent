@@ -2,7 +2,7 @@
 
 本项目基于 AgentScope 2.0.3，目标是建设一个企业级多租户、多用户、多 Agent、多 Session 的 Agent 平台底座。
 
-当前阶段：Phase 3.1 RAG Config Skeleton。Phase 2 的 Workspace、Tool、Permission、Audit、Tracing、runtime tool adapter、runtime permission boundary、runtime audit、runtime workspace alignment 和 WorkspaceManager alignment design 已完成收口。Phase 3.0 已完成 AgentScope RAG Service 架构对齐，Phase 3.1 只增加 RAG 配置骨架和安全状态展示，尚未启用真实 RAG、Qdrant、embedding、BlobStore、index worker 或 chat RAG。
+当前阶段：Phase 3.2 KnowledgeBase Facade Skeleton。Phase 2 的 Workspace、Tool、Permission、Audit、Tracing、runtime tool adapter、runtime permission boundary、runtime audit、runtime workspace alignment 和 WorkspaceManager alignment design 已完成收口。Phase 3.0 已完成 AgentScope RAG Service 架构对齐，Phase 3.1 已完成 RAG 配置骨架和安全状态展示，Phase 3.2 新增平台 KnowledgeBase metadata facade，但尚未启用真实 RAG、Qdrant、embedding、BlobStore、index worker 或 chat RAG。
 
 平台主链路是：
 
@@ -48,7 +48,7 @@ agent-platform/
 │   │   ├── tools/           # extra_agent_tools 工厂
 │   │   ├── middlewares/     # extra_agent_middlewares 工厂
 │   │   ├── workspace/       # WorkspaceManager 规划
-│   │   ├── rag/             # RAG 配置预留
+│   │   ├── rag/             # RAG 配置和 KnowledgeBase metadata facade
 │   │   ├── memory/          # Long-term Memory 配置预留
 │   │   └── team/            # Agent Team 配置预留
 │   └── requirements.txt
@@ -311,6 +311,41 @@ Phase 3.1 离线 smoke test：
 python scripts/smoke_phase3_1_rag_config.py
 ```
 
+### Phase 3.2：KnowledgeBase Facade Skeleton
+
+Phase 3.2 新增平台侧 KnowledgeBase metadata facade：
+
+- `POST /api/platform/knowledge-bases`
+- `GET /api/platform/knowledge-bases`
+- `GET /api/platform/knowledge-bases/{kb_id}`
+- `DELETE /api/platform/knowledge-bases/{kb_id}`
+
+这些接口只管理本地 KB metadata registry，不调用 AgentScope 原生 `/knowledge_bases`，不创建真实 `KnowledgeBaseManager`，不创建向量 collection，不上传文档，不解析切块，不调用 embedding，不启动 index worker，也不接入 chat RAG。Phase 3.2 只提供创建、列表、详情和软删除，不提供 Update，也不提供完整 CRUD。
+
+KB metadata 采用 owner-private 规则：
+
+```text
+tenant_id + owner_user_id
+```
+
+当前用户只能看到、查询、删除自己在当前 tenant 下创建的 KB。跨 tenant 或同 tenant 的其他 user 访问 detail/delete 时统一返回 `404 Not Found`，避免泄露资源存在性。删除是 soft delete，列表默认只返回 `active` 记录。
+
+同一 tenant/user 当前允许创建同名 KB，不做唯一性约束或 409 冲突。
+
+新增配置：
+
+```env
+PLATFORM_RAG_KB_REGISTRY_PATH=.cache/agent-platform/rag-kb-registry.json
+```
+
+该配置只控制 Phase 3.2 本地 metadata registry 文件位置，不代表真实 RAG runtime 已启用。默认 registry 位于 `.cache/`，已被 Git 忽略。registry JSON 包含 `version=1` 和 `knowledge_bases`，坏 JSON 或非法结构不会被静默覆盖。`features.rag.effective_enabled` 和 `features.rag.runtime_registered` 继续保持 `false`。
+
+Phase 3.2 离线 smoke test：
+
+```bash
+python scripts/smoke_phase3_2_kb_facade.py
+```
+
 ## 核心接口
 
 ### 平台主链路接口
@@ -341,6 +376,15 @@ python scripts/smoke_phase3_1_rag_config.py
 | `POST /api/platform/tool-permissions` | 新增工具 allow 规则 |
 | `DELETE /api/platform/tool-permissions/{rule_id}` | 删除工具 allow 规则 |
 | `GET /api/platform/audit/tool-calls` | 查询工具调用审计 |
+
+### KnowledgeBase metadata facade 接口
+
+| 接口 | 说明 |
+| --- | --- |
+| `POST /api/platform/knowledge-bases` | 创建平台侧 KB metadata |
+| `GET /api/platform/knowledge-bases` | 查询当前 tenant/user 的 active KB metadata |
+| `GET /api/platform/knowledge-bases/{kb_id}` | 查询当前 tenant/user 的 KB metadata 详情 |
+| `DELETE /api/platform/knowledge-bases/{kb_id}` | soft delete 当前 tenant/user 的 KB metadata |
 
 ### 健康检查和身份检查
 
@@ -373,6 +417,7 @@ PLATFORM_RAG_MODE=disabled
 PLATFORM_RAG_NATIVE_BASE_URL=
 PLATFORM_RAG_ISOLATION_STRATEGY=collection_per_kb
 PLATFORM_RAG_ENABLE_INDEX_WORKER=false
+PLATFORM_RAG_KB_REGISTRY_PATH=.cache/agent-platform/rag-kb-registry.json
 ```
 
 
@@ -490,6 +535,14 @@ python scripts/smoke_phase3_1_rag_config.py
 
 该脚本不会启动 server，不访问网络，不读写真实 `.env`。它验证 RAG 默认关闭、显式请求时仍未接线、非法配置 fail closed，以及状态输出不泄露 RAG native base URL。
 
+Phase 3.2 KnowledgeBase facade hardening smoke test：
+
+```bash
+python scripts/smoke_phase3_2_kb_facade.py
+```
+
+该脚本不会启动正式 server，不连接 Redis，不访问网络，不调用 AgentScope 原生 `/knowledge_bases`。它会用临时 registry 文件验证 KB metadata 的只读不建文件、创建、列表、详情、soft delete、同名允许、跨 tenant/user 404 隔离、坏 JSON fail closed、原子写入，以及 `main.py` 仍保持 RAG runtime 禁用参数。
+
 ## 文档索引
 
 ### 架构和部署
@@ -519,6 +572,7 @@ python scripts/smoke_phase3_1_rag_config.py
 - [docs/phase2_4-runtime-tool-governance-closure.md](docs/phase2_4-runtime-tool-governance-closure.md)：Phase 2 runtime governance 收口
 - [docs/phase3_0-rag-service-architecture-alignment.md](docs/phase3_0-rag-service-architecture-alignment.md)：Phase 3.0 RAG Service 架构对齐
 - [docs/phase3_1-rag-config-skeleton.md](docs/phase3_1-rag-config-skeleton.md)：Phase 3.1 RAG 配置 skeleton
+- [docs/phase3_2-knowledge-base-facade-skeleton.md](docs/phase3_2-knowledge-base-facade-skeleton.md)：Phase 3.2 KnowledgeBase metadata facade
 
 ## 安全边界
 
@@ -532,6 +586,10 @@ python scripts/smoke_phase3_1_rag_config.py
 - 不实现 custom WorkspaceManager。
 - 不启用真实 RAG runtime。
 - RAG config skeleton 只展示状态，不创建 KnowledgeBaseManager、BlobStore、VectorStore 或 index worker。
+- KnowledgeBase facade 只管理本地 metadata，不调用 AgentScope 原生 `/knowledge_bases`。
+- 跨 tenant/user 的 KB detail/delete 统一返回 404，避免泄露资源存在性。
+- Phase 3.2 不新增 RAG audit，不写入 tool audit 文件。
+- 本地 JSON metadata registry 只适合 MVP 和单进程本地验证，不是多进程或多实例生产存储。
 - 不把 RAG 直接做成 runtime tool。
 - 不修改官方 AgentScope 源码。
 - JSON permission/audit 文件不是生产级并发存储，只作为 MVP skeleton 和 smoke test / regression 基础。
@@ -549,7 +607,7 @@ python scripts/smoke_phase3_1_rag_config.py
 - [x] 完成 runtime tool governance 收口。
 - [x] Phase 3.0 完成 RAG Service 架构对齐设计。
 - [x] Phase 3.1 接入 RAG config skeleton，默认关闭。
-- [ ] Phase 3.2 接入 KnowledgeBase facade skeleton。
+- [x] Phase 3.2 接入 KnowledgeBase facade skeleton。
 - [ ] Phase 4 接入 Long-term Memory。
 - [ ] Phase 5 接入 Agent Team。
 

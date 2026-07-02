@@ -47,7 +47,7 @@ AgentScope Agent Service 的 `create_app(...)` 已内置 RAG Service 参数：
 
 当 `knowledge_base_manager` 为 `None` 时，KB 能力不实际启用；当它存在时，AgentScope 会设置 parser / chunker / blob store，并根据 `enable_index_worker` 决定 API 进程是否启动内置 index worker。
 
-当前 agent-platform Phase 3.1 中，`main.py` 显式传入禁用状态的 RAG 参数：
+当前 agent-platform Phase 3.2 中，`main.py` 仍显式传入禁用状态的 RAG 参数：
 
 ```python
 knowledge_base_manager=None
@@ -236,13 +236,13 @@ pending, parsing, chunking, indexing, ready, error
 - Phase 2.3：runtime tool adapter、runtime permission、runtime audit、runtime workspace，默认全部关闭。
 - Phase 2.4：runtime governance closure。
 - `backend/app/rag/config.py`：已有 `RagConfigStatus(effective_enabled=False, runtime_registered=False, ...)` 配置骨架。
+- `backend/app/rag/routes.py`：已有 Phase 3.2 平台 KnowledgeBase metadata facade。
+- `backend/app/rag/registry.py`：已有 owner-private 本地 JSON metadata registry。
 - `main.py`：已把 RAG 参数显式传给 `create_app`，真实组件当前均为 `None`，没有启用真实 RAG。
-- Phase 3.1 更新：`main.py` 显式传入 `enable_index_worker=False`，并保持 `knowledge_base_manager=None`、`knowledge_parsers=None`、`knowledge_chunker=None`、`blob_store=None`。
+- Phase 3.2 更新：`main.py` 显式传入 `enable_index_worker=False`，并保持 `knowledge_base_manager=None`、`knowledge_parsers=None`、`knowledge_chunker=None`、`blob_store=None`。
 
 缺失能力：
 
-- 平台 RAG facade。
-- KnowledgeBase registry / metadata。
 - Document metadata。
 - Agent-KB binding。
 - RAG permission。
@@ -556,6 +556,7 @@ RAG 不是 runtime tool governance 的替代品。
 - Redis 继续作为 AgentScope storage / message bus。
 - RAG 默认关闭。
 - Phase 3.1 只加配置 skeleton。
+- Phase 3.2 只加平台 KnowledgeBase metadata facade，不调用原生 `/knowledge_bases`。
 - 后续如需 Qdrant，优先用 Docker 单实例验证。
 - BlobStore 可先用 `/data/agent-platform/blobs`。
 - smoke test 只验证最小 KB / upload / status / search，不做大文件压测。

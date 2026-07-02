@@ -12,6 +12,7 @@ from backend.app.middlewares.factory import build_extra_agent_middlewares
 from backend.app.platform.routes import router as platform_api_router
 from backend.app.platform_context import PlatformContext
 from backend.app.rag.config import build_rag_service_plan
+from backend.app.rag.routes import router as rag_api_router
 from backend.app.team.config import build_agent_team_plan
 from backend.app.tools.factory import build_extra_agent_tools
 from backend.app.workspace.manager import build_workspace_plan
@@ -119,6 +120,7 @@ def create_platform_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(create_platform_router(settings))
     app.include_router(platform_api_router)
+    app.include_router(rag_api_router)
     return app
 
 

@@ -44,6 +44,7 @@ class Settings(BaseModel):
     platform_rag_native_base_url: str = ""
     platform_rag_isolation_strategy: str = "collection_per_kb"
     platform_rag_enable_index_worker: bool = False
+    platform_rag_kb_registry_path: str = ".cache/agent-platform/rag-kb-registry.json"
 
     qdrant_host: str = "127.0.0.1"
     qdrant_port: int = 6333
@@ -125,6 +126,10 @@ def get_settings() -> Settings:
         platform_rag_enable_index_worker=env_bool(
             "PLATFORM_RAG_ENABLE_INDEX_WORKER",
             False,
+        ),
+        platform_rag_kb_registry_path=getenv(
+            "PLATFORM_RAG_KB_REGISTRY_PATH",
+            ".cache/agent-platform/rag-kb-registry.json",
         ),
         qdrant_host=getenv("QDRANT_HOST", "127.0.0.1"),
         qdrant_port=int(getenv("QDRANT_PORT", "6333")),

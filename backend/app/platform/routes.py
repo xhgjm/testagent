@@ -73,7 +73,7 @@ async def platform_overview(
     rag_plan = build_rag_service_plan(settings)
     return PlatformOverviewResponse(
         platform="agent-platform",
-        phase="phase-3.1",
+        phase="phase-3.2",
         agent_service="agentscope",
         features={
             "tenant_isolation": True,
@@ -107,6 +107,14 @@ async def platform_overview(
             "rag_index_worker_requested": rag_plan.index_worker_requested,
             "rag_status": rag_plan.status,
             "rag_issues": list(rag_plan.issues),
+            "knowledge_base_facade_registered": True,
+            "knowledge_base_metadata_registry": True,
+            "knowledge_base_registry": "local_json_metadata_only",
+            "knowledge_base_facade": "metadata_only_owner_private",
+            "knowledge_base_runtime_enabled": False,
+            "knowledge_base_runtime_connected": False,
+            "knowledge_base_native_calls": False,
+            "knowledge_base_native_api_called": False,
             "memory": "reserved for phase-4",
             "agent_team": "reserved for phase-5",
         },
