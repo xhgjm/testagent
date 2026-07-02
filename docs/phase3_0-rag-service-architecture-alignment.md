@@ -47,6 +47,18 @@ AgentScope Agent Service 的 `create_app(...)` 已内置 RAG Service 参数：
 
 当 `knowledge_base_manager` 为 `None` 时，KB 能力不实际启用；当它存在时，AgentScope 会设置 parser / chunker / blob store，并根据 `enable_index_worker` 决定 API 进程是否启动内置 index worker。
 
+当前 agent-platform Phase 3.1 中，`main.py` 显式传入禁用状态的 RAG 参数：
+
+```python
+knowledge_base_manager=None
+knowledge_parsers=None
+knowledge_chunker=None
+blob_store=None
+enable_index_worker=False
+```
+
+因此没有向 `create_app` 注入真实 RAG 组件，也不会启动 index worker。
+
 本地源码确认原生 RAG router 挂载在：
 
 ```text
@@ -224,7 +236,8 @@ pending, parsing, chunking, indexing, ready, error
 - Phase 2.3：runtime tool adapter、runtime permission、runtime audit、runtime workspace，默认全部关闭。
 - Phase 2.4：runtime governance closure。
 - `backend/app/rag/config.py`：已有 `RagConfigStatus(effective_enabled=False, runtime_registered=False, ...)` 配置骨架。
-- `main.py`：已把 RAG 参数显式传给 `create_app`，当前均为 `None`，没有启用真实 RAG。
+- `main.py`：已把 RAG 参数显式传给 `create_app`，真实组件当前均为 `None`，没有启用真实 RAG。
+- Phase 3.1 更新：`main.py` 显式传入 `enable_index_worker=False`，并保持 `knowledge_base_manager=None`、`knowledge_parsers=None`、`knowledge_chunker=None`、`blob_store=None`。
 
 缺失能力：
 

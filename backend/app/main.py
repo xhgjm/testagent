@@ -96,7 +96,9 @@ def create_platform_app(settings: Settings | None = None) -> FastAPI:
         knowledge_parsers=None,
         knowledge_chunker=None,
         blob_store=None,
-        enable_index_worker=True,
+        # Phase 3.1 keeps RAG runtime explicitly disabled. Do not bind this
+        # to PLATFORM_RAG_ENABLE_INDEX_WORKER until a real manager exists.
+        enable_index_worker=False,
         # AgentScope 2.0.3 calls these async factories at ChatService runtime.
         # Do not pass prebuilt lists here.
         extra_agent_tools=build_extra_agent_tools,

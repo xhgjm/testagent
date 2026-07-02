@@ -28,6 +28,17 @@ def assert_not_contains_sensitive_value(plan_json: str) -> None:
 
 
 def main() -> None:
+    main_py = PROJECT_ROOT / "backend" / "app" / "main.py"
+    main_source = main_py.read_text(encoding="utf-8")
+    assert_true(
+        "enable_index_worker=False" in main_source,
+        "Phase 3.1 main.py must pass enable_index_worker=False.",
+    )
+    assert_true(
+        "enable_index_worker=settings.platform_rag_enable_index_worker" not in main_source,
+        "Phase 3.1 must not bind enable_index_worker to PLATFORM_RAG_ENABLE_INDEX_WORKER.",
+    )
+
     default_plan = resolve_rag_config_status(Settings())
     assert_true(
         default_plan.requested_enabled is False,

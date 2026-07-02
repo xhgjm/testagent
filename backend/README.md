@@ -151,6 +151,18 @@ PLATFORM_RAG_ENABLE_INDEX_WORKER=false
 
 Phase 3.1 明确拒绝 `PLATFORM_RAG_ENABLE_INDEX_WORKER=true`，状态为 `misconfigured`，并保持 `effective_enabled=false`、`runtime_registered=false`。
 
+`backend/app/main.py` 显式传入禁用状态的 RAG 参数：
+
+```python
+knowledge_base_manager=None
+knowledge_parsers=None
+knowledge_chunker=None
+blob_store=None
+enable_index_worker=False
+```
+
+这些参数不绑定 `PLATFORM_RAG_ENABLE_INDEX_WORKER`。当前没有向 `create_app` 注入真实 RAG 组件。AgentScope 原生 `/knowledge_bases` router 可能存在，但在没有 `knowledge_base_manager` 时预期返回 `503 Service Unavailable`。Phase 3.1 不注册 `/api/platform/knowledge-bases`。
+
 后续 Phase 3.1+ 建议新增：
 
 - `backend/app/rag/schemas.py`
