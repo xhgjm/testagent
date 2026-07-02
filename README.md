@@ -2,7 +2,7 @@
 
 本项目基于 AgentScope 2.0.3，目标是建设一个企业级多租户、多用户、多 Agent、多 Session 的 Agent 平台底座。
 
-当前阶段：Phase 2.4 Runtime Tool Governance Closure。Phase 2 的 Workspace、Tool、Permission、Audit、Tracing、runtime tool adapter、runtime permission boundary、runtime audit、runtime workspace alignment 和 WorkspaceManager alignment design 已完成收口。下一阶段建议进入 Phase 3 RAG Service。
+当前阶段：Phase 2.4 Runtime Tool Governance Closure。Phase 2 的 Workspace、Tool、Permission、Audit、Tracing、runtime tool adapter、runtime permission boundary、runtime audit、runtime workspace alignment 和 WorkspaceManager alignment design 已完成收口。下一阶段进入 Phase 3 RAG Service。
 
 平台主链路是：
 
