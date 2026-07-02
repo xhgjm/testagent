@@ -12,6 +12,8 @@ Phase 1 中，`backend.app.main:app` 直接使用 AgentScope 2.0.3 `create_app` 
 - `extra_agent_tools`
 - `extra_agent_middlewares`
 
+当前阶段：Phase 3.0 RAG Service Architecture Alignment。后端已完成 AgentScope RAG 相关签名核验和平台 RAG facade 设计，但尚未启用真实 RAG、Qdrant、embedding、BlobStore、index worker 或 chat RAG。
+
 ## 本地启动
 
 Linux / macOS：
@@ -114,6 +116,48 @@ PLATFORM_RUNTIME_AUDIT_MODE=disabled
 
 只有显式开启 mock mode，并且平台 permission JSON 存在 allow 规则时，才会注入安全 mock 工具 `runtime_echo_tool`。该工具不读写文件、不访问网络、不执行系统命令、不接 MCP / Skill / 企业系统。
 
+## Phase 3 RAG Service 规划
+
+Phase 3 将在 AgentScope RAG Service 之上增加平台 RAG facade，而不是把平台改造成单体 RAG 问答机器人。
+
+当前已核验的 AgentScope 2.0.3 RAG 能力：
+
+- `create_app` 支持 `knowledge_base_manager`、`knowledge_parsers`、`knowledge_chunker`、`blob_store`、`enable_index_worker`
+- `agentscope.rag.KnowledgeBase`
+- `ParserBase` / `TextParser` / `PDFParser` / `PPTParser` / `ImageParser`
+- `ChunkerBase` / `ApproxTokenChunker`
+- `VectorStoreBase` / `QdrantStore`
+- `CollectionPerKbManager`
+- `LocalBlobStore` / `S3BlobStore`
+- `RAGMiddleware`
+- 原生 `/knowledge_bases` router
+
+当前 `backend/app/rag` 只是预留目录：
+
+- `config.py` 返回 `RagServicePlan(enabled=False, ...)`
+- `README.md` 说明后续模块规划
+
+后续 Phase 3.1+ 建议新增：
+
+- `backend/app/rag/schemas.py`
+- `backend/app/rag/registry.py`
+- `backend/app/rag/native_client.py`
+- `backend/app/rag/routes.py`
+- `backend/app/rag/permissions.py`
+- `backend/app/rag/audit.py`
+- `backend/app/rag/bindings.py`
+
+Phase 3.0 没有新增 RAG 外部 API。未来企业入口建议放在：
+
+```text
+/api/platform/knowledge-bases
+/api/platform/knowledge-bases/{kb_id}/documents
+/api/platform/knowledge-bases/{kb_id}/search
+/api/platform/agents/{agent_id}/knowledge-bases
+```
+
+原生 `/knowledge_bases` 保留给底层调试，企业侧仍应优先使用 `/api/platform/...` facade。
+
 ## smoke test 脚本
 
 Phase 2.4 runtime governance smoke test 入口：
@@ -131,5 +175,7 @@ python scripts/smoke_phase2_4_runtime_governance.py
 - 如果 ECS Redis 需要密码或 TLS，补充 Redis 连接配置。
 - 本地 workspace 流程稳定后，再评估 DockerWorkspaceManager。
 - runtime tools 和 runtime audit 默认保持关闭。
-- 下一步进入 Phase 3 RAG Service 设计，优先做 AgentScope RAG Service 之上的平台 facade。
+- 下一步进入 Phase 3.1 RAG config skeleton，默认关闭。
+- RAG facade、KB metadata、Document metadata、Agent-KB binding、RAG permission、RAG audit 仍未实现。
+- 当前不部署 Qdrant，不接 embedding，不接 BlobStore，不启用 index worker。
 - 是否需要 custom WorkspaceManager，等 RAG / MCP / Skill 生命周期需求更清楚后再决定。

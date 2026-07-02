@@ -2,7 +2,7 @@
 
 本项目基于 AgentScope 2.0.3，目标是建设一个企业级多租户、多用户、多 Agent、多 Session 的 Agent 平台底座。
 
-当前阶段：Phase 2.4 Runtime Tool Governance Closure。Phase 2 的 Workspace、Tool、Permission、Audit、Tracing、runtime tool adapter、runtime permission boundary、runtime audit、runtime workspace alignment 和 WorkspaceManager alignment design 已完成收口。下一阶段进入 Phase 3 RAG Service。
+当前阶段：Phase 3.0 RAG Service Architecture Alignment。Phase 2 的 Workspace、Tool、Permission、Audit、Tracing、runtime tool adapter、runtime permission boundary、runtime audit、runtime workspace alignment 和 WorkspaceManager alignment design 已完成收口。Phase 3.0 只做 AgentScope RAG Service 架构对齐和实施拆分，尚未启用真实 RAG、Qdrant、embedding、BlobStore 或 chat RAG。
 
 平台主链路是：
 
@@ -257,6 +257,24 @@ python scripts/smoke_phase2_4_runtime_governance.py
 
 该脚本复用 Phase 2.3.7 runtime smoke，使用临时 permission/audit/workspace 文件，不依赖真实 `.env`，不启动 server，不访问网络。
 
+### Phase 3.0：RAG Service 架构对齐
+
+Phase 3.0 已完成 AgentScope 2.0.3 RAG 能力核验和平台架构对齐设计。
+
+已核验的 AgentScope RAG 能力包括：
+
+- `create_app` 的 `knowledge_base_manager`、`knowledge_parsers`、`knowledge_chunker`、`blob_store`、`enable_index_worker` 参数
+- `agentscope.rag.KnowledgeBase`
+- `ParserBase` / `TextParser` / `PDFParser` / `PPTParser` / `ImageParser`
+- `ChunkerBase` / `ApproxTokenChunker`
+- `VectorStoreBase` / `QdrantStore`
+- `CollectionPerKbManager`
+- `LocalBlobStore` / `S3BlobStore`
+- `RAGMiddleware`
+- AgentScope 原生 `/knowledge_bases` router
+
+Phase 3.0 不新增 RAG API，不启用 RAG runtime，不部署 Qdrant，不修改 `main.py` 主链路。后续 Phase 3.1 将先做 RAG config skeleton，并保持默认关闭。
+
 ## 核心接口
 
 ### 平台主链路接口
@@ -449,6 +467,7 @@ python scripts/smoke_phase2_4_runtime_governance.py
 - [docs/phase2_3_7-runtime-tool-full-regression.md](docs/phase2_3_7-runtime-tool-full-regression.md)：runtime 全链路 smoke test / regression
 - [docs/phase2_3_7-workspace-manager-alignment-design.md](docs/phase2_3_7-workspace-manager-alignment-design.md)：WorkspaceManager 对齐设计
 - [docs/phase2_4-runtime-tool-governance-closure.md](docs/phase2_4-runtime-tool-governance-closure.md)：Phase 2 runtime governance 收口
+- [docs/phase3_0-rag-service-architecture-alignment.md](docs/phase3_0-rag-service-architecture-alignment.md)：Phase 3.0 RAG Service 架构对齐
 
 ## 安全边界
 
@@ -460,6 +479,8 @@ python scripts/smoke_phase2_4_runtime_governance.py
 - 不接 shell、系统命令、文件删除、网络访问工具。
 - 不接 MCP / Skill / 真实企业系统。
 - 不实现 custom WorkspaceManager。
+- 不启用真实 RAG runtime。
+- 不把 RAG 直接做成 runtime tool。
 - 不修改官方 AgentScope 源码。
 - JSON permission/audit 文件不是生产级并发存储，只作为 MVP skeleton 和 smoke test / regression 基础。
 
@@ -474,7 +495,8 @@ python scripts/smoke_phase2_4_runtime_governance.py
 - [x] 完成平台 API facade。
 - [x] 完成 Workspace / Tool / Permission / Audit 雏形。
 - [x] 完成 runtime tool governance 收口。
-- [ ] Phase 3 接入 RAG Service。
+- [x] Phase 3.0 完成 RAG Service 架构对齐设计。
+- [ ] Phase 3.1 接入 RAG config skeleton，默认关闭。
 - [ ] Phase 4 接入 Long-term Memory。
 - [ ] Phase 5 接入 Agent Team。
 
@@ -494,7 +516,15 @@ python scripts/smoke_phase2_4_runtime_governance.py
 - Phase 2.3.6：Runtime workspace alignment。
 - Phase 2.3.7：Runtime full regression + WorkspaceManager alignment design。
 - Phase 2.4：Runtime Tool Governance 收口。
-- Phase 3：RAG Service。
+- Phase 3.0：RAG Service 架构对齐和 AgentScope RAG 签名核验。
+- Phase 3.1：RAG config skeleton，默认关闭。
+- Phase 3.2：KnowledgeBase facade skeleton。
+- Phase 3.3：Document metadata / upload facade skeleton。
+- Phase 3.4：Search facade + metadata_filter isolation。
+- Phase 3.5：Agent-KB binding。
+- Phase 3.6：RAG audit / tracing。
+- Phase 3.7：RAG ECS smoke test。
+- Phase 3.8：Chat RAG integration design。
 - Phase 4：Long-term Memory。
 - Phase 5：Agent Team。
 - Phase 6：企业鉴权、审计、预算、限流、部署治理。
