@@ -253,3 +253,31 @@ Recommended Phase 3 starting point:
 - BlobStore and vector-store configuration
 - async index worker smoke test
 - tenant/user knowledge isolation
+
+## ECS Smoke Test Result
+
+Date: 2026-07-01
+Port: 8891
+Result: Passed
+
+Verified:
+- python -m compileall backend/app passed.
+- python -m compileall scripts passed.
+- scripts/smoke_phase2_3_7_runtime_tools.py passed.
+- Smoke script does not start server.
+- Smoke script does not access network.
+- Smoke script does not connect MCP or Skill.
+- Smoke script uses temporary smoke files under .cache/agent-platform-smoke.
+- Platform health endpoint remains normal.
+- Runtime tools remain disabled by default.
+- build_extra_agent_tools returns [] by default.
+- No runtime main chain change was required.
+
+Evidence:
+- Phase 2.3.7 runtime tool smoke passed.
+- /platform/health returned status=ok.
+- runtime tools: []
+- count: 0
+
+Conclusion:
+Phase 2.3.7 runtime tool full regression and WorkspaceManager alignment design passed ECS validation.
