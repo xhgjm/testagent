@@ -1,10 +1,10 @@
-# Backend
+﻿# 后端服务
 
-This backend is the AgentScope Enterprise Multi-Tenant Agent Platform service entry.
+本目录是 AgentScope 企业级多租户 Agent 平台的后端入口。
 
-In Phase 1, `backend.app.main:app` is the FastAPI app returned by AgentScope 2.0.3 `create_app`. Platform routes are added with `include_router`, so the AgentScope app is not nested inside another FastAPI app.
+Phase 1 中，`backend.app.main:app` 直接使用 AgentScope 2.0.3 `create_app` 返回的 FastAPI 应用。平台自定义路由通过 `include_router` 挂载到同一个应用上，因此没有把 AgentScope 应用嵌套进另一个 FastAPI 应用。
 
-The backend initializes:
+后端启动时会初始化：
 
 - `RedisStorage`
 - `RedisMessageBus`
@@ -12,7 +12,9 @@ The backend initializes:
 - `extra_agent_tools`
 - `extra_agent_middlewares`
 
-## Local Start
+## 本地启动
+
+Linux / macOS：
 
 ```bash
 python -m venv .venv
@@ -22,7 +24,7 @@ cp .env.example .env
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8891 --reload
 ```
 
-Windows PowerShell:
+Windows PowerShell：
 
 ```powershell
 python -m venv .venv
@@ -32,15 +34,15 @@ Copy-Item .env.example .env
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8891 --reload
 ```
 
-Open:
+启动后打开：
 
 ```text
 http://127.0.0.1:8891/docs
 ```
 
-## ECS Start
+## ECS 启动
 
-On Kylin Linux Advanced Server V10:
+在 Kylin Linux Advanced Server V10 上：
 
 ```bash
 git pull
@@ -52,215 +54,82 @@ bash deploy/scripts/check-env.sh
 bash deploy/scripts/start-backend.sh
 ```
 
-## Test X-User-ID
+ECS 演示环境统一使用 `8891` 端口，因为 `8000` 已被已有服务占用。本地开发如果 `8000` 没被占用，可以在 `.env` 或启动命令中自行调整。
+
+## 基础检查
+
+模拟用户：
 
 ```bash
 curl -H "X-User-ID: userA" -H "X-Tenant-ID: tenantA" http://127.0.0.1:8891/api/me
 ```
 
-## Platform Health
+健康检查：
 
 ```bash
 curl http://127.0.0.1:8891/platform/health
 ```
 
-ECS 演示环境统一使用 `8891`，因为 `8000` 已被已有服务占用。本地开发如果 `8000` 没被占用，可以在 `.env` 或启动命令中自行改回 `8000`。
+## AgentScope 原生接口
 
-## AgentScope Native APIs
+以下能力来自 AgentScope Agent Service：
 
-The following APIs are expected to come from AgentScope Agent Service:
-
-- Credential APIs
-- Agent template APIs
-- Session APIs
-- Chat APIs
+- Credential 接口
+- Agent 模板接口
+- Session 接口
+- Chat 接口
 - `/sessions/{session_id}/stream`
 - `/sessions/{session_id}/messages`
 
-Check the generated OpenAPI page at `/docs` for exact paths and request schemas in the installed AgentScope 2.0.3 build.
+具体路径和请求结构以当前安装的 AgentScope 2.0.3 在 `/docs` 生成的 OpenAPI 页面为准。
 
-## Phase 1.5 Platform Facade
+## 平台封装接口
 
-Enterprise clients should use platform APIs under `/api/platform/...`:
+企业侧推荐调用 `/api/platform/...` 下的平台接口。平台层会把 `X-User-ID` 改写为 `tenant_id:user_id` 后转发给原生接口，例如 `tenantA:userA`，以此实现基础租户隔离。
 
-- `GET /api/platform/overview`
-- `POST /api/platform/credentials`
-- `GET /api/platform/agents`
-- `POST /api/platform/agents`
-- `GET /api/platform/sessions?agent_id=...`
-- `POST /api/platform/sessions`
-- `POST /api/platform/chat`
-- `GET /api/platform/sessions/{session_id}/messages?agent_id=...`
-- `GET /api/platform/sessions/{session_id}/stream-url?agent_id=...`
+不要在日志、响应或仓库中写入真实 API Key。示例中统一使用 `<YOUR_API_KEY>` 或环境变量。
 
-The native AgentScope APIs remain available for low-level debugging. The platform facade forwards requests to native endpoints with `X-User-ID` rewritten as `tenant_id:user_id`, for example `tenantA:userA`.
+## Phase 2 Runtime Tool Governance
 
-Do not log, return, or commit real API keys. Use `<YOUR_API_KEY>` or environment variables in examples.
+Phase 2 已完成以下治理能力：
 
-Full smoke test: [../docs/phase1_5-platform-api.md](../docs/phase1_5-platform-api.md).
+- 平台 Tool Registry 元数据
+- 默认拒绝权限模型
+- Tool Permission Admin API
+- 平台主动工具调用审计和追踪
+- 默认关闭的 `extra_agent_tools` adapter
+- runtime 执行时二次权限校验
+- `runtime_echo_tool` runtime audit/tracing
+- runtime workspace context
+- WorkspaceManager 对齐设计
 
-## Phase 2 Workspace, Tool, Permission
+Runtime tools 默认关闭：
 
-Phase 2 adds platform-owned enterprise primitives without changing AgentScope native APIs:
-
-- `GET /api/platform/workspaces/resolve`
-- `GET /api/platform/tools`
-- `POST /api/platform/tools/{tool_name}/invoke`
-- `GET /api/platform/audit/tool-calls`
-
-Workspace paths are resolved by `tenant_id/user_id/agent_id/session_id`. Tool invocation is default deny. Add explicit allow rules with `PLATFORM_TOOL_PERMISSION_FILE`.
-
-Example permission file:
-
-```json
-{
-  "allow": [
-    {
-      "tenant_id": "tenantA",
-      "user_id": "userA",
-      "agent_id": "*",
-      "tool_name": "echo_tool"
-    }
-  ]
-}
+```env
+PLATFORM_ENABLE_RUNTIME_TOOLS=false
+PLATFORM_RUNTIME_TOOLS_MODE=disabled
+PLATFORM_ENABLE_RUNTIME_AUDIT=false
+PLATFORM_RUNTIME_AUDIT_MODE=disabled
 ```
 
-Tool audit is written to `PLATFORM_TOOL_AUDIT_LOG_FILE`, defaulting to `logs/tool-calls-audit.jsonl`.
+只有显式开启 mock mode，并且平台 permission JSON 存在 allow 规则时，才会注入安全 mock 工具 `runtime_echo_tool`。该工具不读写文件、不访问网络、不执行系统命令、不接 MCP / Skill / 企业系统。
 
-Full smoke test: [../docs/phase2-workspace-tool-permission.md](../docs/phase2-workspace-tool-permission.md).
+## 回归脚本
 
-## Phase 2.1 Hardening
-
-Phase 2.1 adds:
-
-- Tool Permission Admin API
-- Workspace file listing
-- Workspace cleanup preview and safe cleanup
-- Tool invocation timeout
-- Structured tracing fields in audit records
-
-New APIs:
-
-- `GET /api/platform/tool-permissions`
-- `POST /api/platform/tool-permissions`
-- `DELETE /api/platform/tool-permissions/{rule_id}`
-- `GET /api/platform/workspaces/files`
-- `POST /api/platform/workspaces/cleanup-preview`
-- `POST /api/platform/workspaces/cleanup`
-
-Tool calls return or record `trace_id`, `status`, `duration_ms`, and `error_code`. Traces are written to JSONL through `PLATFORM_TOOL_TRACE_LOG_FILE`.
-
-Full smoke test: [../docs/phase2_1-hardening.md](../docs/phase2_1-hardening.md).
-
-## Phase 2.3.1 Tool Metadata Native Alignment
-
-Phase 2.3.1 extends the platform tool registry metadata without changing runtime tool execution.
-
-`GET /api/platform/tools` now returns:
-
-- `tool_name`
-- `description`
-- `native_type`
-- `native_ref`
-- `timeout_seconds`
-- `enabled`
-
-The current mock tools are still safe local tools:
-
-- `echo_tool`: `native_type=mock`, `native_ref=null`
-- `time_tool`: `native_type=mock`, `native_ref=null`
-- `slow_tool`: `native_type=mock`, `native_ref=null`
-
-`POST /api/platform/tools/{tool_name}/invoke` keeps the same request body and continues to use the existing permission, timeout, audit, and tracing flow. This phase does not implement the `extra_agent_tools` adapter or native AgentScope runtime tool calling.
-
-Full smoke test: [../docs/phase2_3_1-tool-metadata.md](../docs/phase2_3_1-tool-metadata.md).
-
-## Phase 2.3.4 Runtime Permission Boundary
-
-Phase 2.3.4 adds the minimum runtime permission boundary for the experimental `runtime_echo_tool`.
-
-Runtime tools remain disabled by default. When explicitly enabled, the adapter now has two permission layers:
-
-- Injection-time filter: no platform allow rule means no runtime tool is injected.
-- Execution-time check: the bound runtime tool callable checks platform permission again before returning text.
-
-The new helper module is `backend/app/platform/runtime_permissions.py`. It also includes an experimental AgentScope `PermissionRule` mapper helper, but this mapper is not wired into AgentScope `PermissionContext` yet.
-
-Full smoke test: [../docs/phase2_3_4-runtime-permission-boundary.md](../docs/phase2_3_4-runtime-permission-boundary.md).
-
-## Phase 2.3.5 Runtime Audit / Tracing
-
-Phase 2.3.5 adds minimal runtime audit/tracing for the safe `runtime_echo_tool`.
-
-New modules:
-
-- `backend/app/platform/runtime_audit.py`
-- `backend/app/platform/runtime_middlewares.py`
-
-`backend/app/middlewares/factory.py` now delegates to the runtime middleware factory. Runtime middleware remains disabled by default and returns `[]` unless explicitly enabled.
-
-When runtime tools and runtime audit are both enabled, `runtime_echo_tool` writes structured records to the existing audit and trace JSONL files. The record includes `event_type=runtime_tool_call` and `source=agentscope_runtime`. Tool input text is not recorded.
-
-Full smoke test: [../docs/phase2_3_5-runtime-audit-middleware.md](../docs/phase2_3_5-runtime-audit-middleware.md).
-
-## Phase 2.3.6 Runtime Workspace Alignment
-
-Phase 2.3.6 binds platform workspace context to the experimental
-`runtime_echo_tool` path.
-
-New module:
-
-- `backend/app/platform/runtime_workspace.py`
-
-The runtime adapter now resolves workspace context with the same platform
-workspace resolver used by `/api/platform/workspaces/resolve`. The isolation
-strategy remains `tenant_id/user_id/agent_id/session_id`.
-
-Runtime audit records can include:
-
-- `workspace_path`
-- `workspace_exists`
-- `workspace_created`
-- `workspace_isolation_strategy`
-
-This phase does not replace AgentScope `LocalWorkspaceManager`, does not add a
-custom WorkspaceManager, and does not let `runtime_echo_tool` read or write
-workspace files.
-
-Full smoke test: [../docs/phase2_3_6-runtime-workspace-alignment.md](../docs/phase2_3_6-runtime-workspace-alignment.md).
-
-## Phase 2.3.7 Runtime Regression And WorkspaceManager Design
-
-Phase 2.3.7 adds a repeatable local runtime regression script and an
-AgentScope WorkspaceManager alignment design.
-
-New files:
-
-- `scripts/smoke_phase2_3_7_runtime_tools.py`
-- `docs/phase2_3_7-runtime-tool-full-regression.md`
-- `docs/phase2_3_7-workspace-manager-alignment-design.md`
-
-Run the smoke script locally:
+Phase 2.4 runtime governance 回归入口：
 
 ```bash
-python scripts/smoke_phase2_3_7_runtime_tools.py
+python scripts/smoke_phase2_4_runtime_governance.py
 ```
 
-The script uses temporary permission, audit, trace, and workspace files. It
-does not rely on real `.env`, does not start a server, does not access network,
-and does not connect MCP or Skills.
+该脚本复用 Phase 2.3.7 runtime smoke，使用 `.cache` 下的临时 permission、audit、trace 和 workspace 文件，不依赖真实 `.env`，不启动 server，不访问网络，不连接 MCP / Skill。
 
-AgentScope 2.0.3 `LocalWorkspaceManager` was verified to use
-`basedir/agent_id` for local workdirs. The platform resolver uses
-`basedir/tenant_id/user_id/agent_id/session_id`. This phase documents the
-boundary and does not replace `LocalWorkspaceManager`.
+## 当前 TODO
 
-## Current TODO
-
-- Smoke test Credential / Agent / Session / Message APIs through official Agent Service.
-- Smoke test Chat and SSE event stream.
-- Add Redis password / TLS options if the ECS Redis requires them.
-- Add DockerWorkspaceManager after local workspace flow is stable.
-- Add tenant-aware permission checks and audit middleware.
-- Keep runtime tool and runtime audit defaults closed until Phase 2.4 review.
-- Decide whether custom WorkspaceManager is needed after Phase 2.4 / Phase 3 RAG design.
+- 继续通过官方 Agent Service 冒烟验证 Credential / Agent / Session / Message。
+- 继续冒烟验证 Chat 和 SSE 事件流。
+- 如果 ECS Redis 需要密码或 TLS，补充 Redis 连接配置。
+- 本地 workspace 流程稳定后，再评估 DockerWorkspaceManager。
+- runtime tools 和 runtime audit 默认保持关闭。
+- 下一步进入 Phase 3 RAG Service 设计，优先做 AgentScope RAG Service 之上的平台 facade。
+- 是否需要 custom WorkspaceManager，等 RAG / MCP / Skill 生命周期需求更清楚后再决定。
