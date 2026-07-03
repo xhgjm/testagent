@@ -7,3 +7,5 @@ agentscope
 redis
 APScheduler
 httpx
+python-multipart
+pypdf

@@ -45,6 +45,16 @@ class Settings(BaseModel):
     platform_rag_isolation_strategy: str = "collection_per_kb"
     platform_rag_enable_index_worker: bool = False
     platform_rag_kb_registry_path: str = ".cache/agent-platform/rag-kb-registry.json"
+    platform_rag_document_registry_path: str = (
+        ".cache/agent-platform/rag-document-registry.json"
+    )
+    platform_rag_file_storage_root: str = ".cache/agent-platform/rag-files"
+    platform_rag_chunk_registry_path: str = (
+        ".cache/agent-platform/rag-chunk-registry.json"
+    )
+    platform_rag_max_upload_bytes: int = 10 * 1024 * 1024
+    platform_rag_chunk_size: int = 1200
+    platform_rag_chunk_overlap: int = 200
 
     qdrant_host: str = "127.0.0.1"
     qdrant_port: int = 6333
@@ -131,6 +141,23 @@ def get_settings() -> Settings:
             "PLATFORM_RAG_KB_REGISTRY_PATH",
             ".cache/agent-platform/rag-kb-registry.json",
         ),
+        platform_rag_document_registry_path=getenv(
+            "PLATFORM_RAG_DOCUMENT_REGISTRY_PATH",
+            ".cache/agent-platform/rag-document-registry.json",
+        ),
+        platform_rag_file_storage_root=getenv(
+            "PLATFORM_RAG_FILE_STORAGE_ROOT",
+            ".cache/agent-platform/rag-files",
+        ),
+        platform_rag_chunk_registry_path=getenv(
+            "PLATFORM_RAG_CHUNK_REGISTRY_PATH",
+            ".cache/agent-platform/rag-chunk-registry.json",
+        ),
+        platform_rag_max_upload_bytes=int(
+            getenv("PLATFORM_RAG_MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)),
+        ),
+        platform_rag_chunk_size=int(getenv("PLATFORM_RAG_CHUNK_SIZE", "1200")),
+        platform_rag_chunk_overlap=int(getenv("PLATFORM_RAG_CHUNK_OVERLAP", "200")),
         qdrant_host=getenv("QDRANT_HOST", "127.0.0.1"),
         qdrant_port=int(getenv("QDRANT_PORT", "6333")),
         blob_store_root=getenv("BLOB_STORE_ROOT", "/data/agent-platform/blobs"),

@@ -2,7 +2,7 @@
 
 本项目基于 AgentScope 2.0.3，目标是建设一个企业级多租户、多用户、多 Agent、多 Session 的 Agent 平台底座。
 
-当前阶段：Phase 3.2 KnowledgeBase Facade Skeleton。Phase 2 的 Workspace、Tool、Permission、Audit、Tracing、runtime tool adapter、runtime permission boundary、runtime audit、runtime workspace alignment 和 WorkspaceManager alignment design 已完成收口。Phase 3.0 已完成 AgentScope RAG Service 架构对齐，Phase 3.1 已完成 RAG 配置骨架和安全状态展示，Phase 3.2 新增平台 KnowledgeBase metadata facade，但尚未启用真实 RAG、Qdrant、embedding、BlobStore、index worker 或 chat RAG。
+当前阶段：Phase 3.4 Document File Upload, Parsing and Chunking Skeleton。Phase 2 的 Workspace、Tool、Permission、Audit、Tracing、runtime tool adapter、runtime permission boundary、runtime audit、runtime workspace alignment 和 WorkspaceManager alignment design 已完成收口。Phase 3.0 已完成 AgentScope RAG Service 架构对齐，Phase 3.1 已完成 RAG 配置骨架和安全状态展示，Phase 3.2 新增平台 KnowledgeBase metadata facade，Phase 3.3 新增 Document metadata facade，Phase 3.4 新增受控文件上传、本地解析和 Chunk registry，但尚未启用真实 RAG、Qdrant、embedding、BlobStore、index worker、Search 或 chat RAG。
 
 平台主链路是：
 
@@ -346,6 +346,75 @@ Phase 3.2 离线 smoke test：
 python scripts/smoke_phase3_2_kb_facade.py
 ```
 
+### Phase 3.3：Document Metadata Facade Skeleton
+
+Phase 3.3 在 KnowledgeBase 下新增 Document metadata facade：
+
+- `POST /api/platform/knowledge-bases/{kb_id}/documents`
+- `GET /api/platform/knowledge-bases/{kb_id}/documents`
+- `GET /api/platform/knowledge-bases/{kb_id}/documents/{document_id}`
+- `DELETE /api/platform/knowledge-bases/{kb_id}/documents/{document_id}`
+
+这些接口只登记和管理 Document metadata，不接收真实文件，不保存二进制，不调用 Parser / Chunker / Embedding / VectorStore，不调用 AgentScope 原生 Document API，也不接入 chat RAG。
+
+Document 必须属于当前 tenant/user 下 active KnowledgeBase。跨 tenant、跨 user、错误 KB + 正确 Document、父 KB 已删除、Document 已删除或不存在时统一返回 404。
+
+Document 运行时状态只有：
+
+```text
+registered
+deleted
+```
+
+同一 tenant/user、同一 KB 下允许登记同名 Document，不做唯一性约束。
+
+新增配置：
+
+```env
+PLATFORM_RAG_DOCUMENT_REGISTRY_PATH=.cache/agent-platform/rag-document-registry.json
+```
+
+Phase 3.3 离线 smoke test：
+
+```bash
+python scripts/smoke_phase3_3_document_facade.py
+```
+
+### Phase 3.4：Document File Upload, Parsing and Chunking Skeleton
+
+Phase 3.4 新增：
+
+- `POST /api/platform/knowledge-bases/{kb_id}/documents/{document_id}/upload`
+- 本地安全文件保存
+- SHA-256 校验
+- TXT / Markdown / 文本型 PDF 解析
+- deterministic character chunking
+- Chunk local JSON registry
+
+当前成功上传后的 Document 状态为：
+
+```text
+parsed
+```
+
+不是 `indexed` 或 `ready`。Chunk 还没有 Embedding，也没有写入向量数据库，因此平台仍不具备真实知识检索和 RAG 问答能力。
+
+新增配置：
+
+```env
+PLATFORM_RAG_FILE_STORAGE_ROOT=.cache/agent-platform/rag-files
+PLATFORM_RAG_CHUNK_REGISTRY_PATH=.cache/agent-platform/rag-chunk-registry.json
+PLATFORM_RAG_MAX_UPLOAD_BYTES=10485760
+PLATFORM_RAG_CHUNK_SIZE=1200
+PLATFORM_RAG_CHUNK_OVERLAP=200
+```
+
+Phase 3.4 离线 smoke test：
+
+```bash
+python scripts/smoke_phase3_4_document_processing.py
+```
+
 ## 核心接口
 
 ### 平台主链路接口
@@ -386,6 +455,16 @@ python scripts/smoke_phase3_2_kb_facade.py
 | `GET /api/platform/knowledge-bases/{kb_id}` | 查询当前 tenant/user 的 KB metadata 详情 |
 | `DELETE /api/platform/knowledge-bases/{kb_id}` | soft delete 当前 tenant/user 的 KB metadata |
 
+### Document metadata facade 接口
+
+| 接口 | 说明 |
+| --- | --- |
+| `POST /api/platform/knowledge-bases/{kb_id}/documents` | 登记 Document metadata |
+| `GET /api/platform/knowledge-bases/{kb_id}/documents` | 查询当前 KB 下未删除 Document metadata |
+| `GET /api/platform/knowledge-bases/{kb_id}/documents/{document_id}` | 查询 Document metadata 详情 |
+| `DELETE /api/platform/knowledge-bases/{kb_id}/documents/{document_id}` | soft delete Document metadata |
+| `POST /api/platform/knowledge-bases/{kb_id}/documents/{document_id}/upload` | 上传、解析并切分 Document |
+
 ### 健康检查和身份检查
 
 | 接口 | 说明 |
@@ -418,6 +497,12 @@ PLATFORM_RAG_NATIVE_BASE_URL=
 PLATFORM_RAG_ISOLATION_STRATEGY=collection_per_kb
 PLATFORM_RAG_ENABLE_INDEX_WORKER=false
 PLATFORM_RAG_KB_REGISTRY_PATH=.cache/agent-platform/rag-kb-registry.json
+PLATFORM_RAG_DOCUMENT_REGISTRY_PATH=.cache/agent-platform/rag-document-registry.json
+PLATFORM_RAG_FILE_STORAGE_ROOT=.cache/agent-platform/rag-files
+PLATFORM_RAG_CHUNK_REGISTRY_PATH=.cache/agent-platform/rag-chunk-registry.json
+PLATFORM_RAG_MAX_UPLOAD_BYTES=10485760
+PLATFORM_RAG_CHUNK_SIZE=1200
+PLATFORM_RAG_CHUNK_OVERLAP=200
 ```
 
 
@@ -543,6 +628,22 @@ python scripts/smoke_phase3_2_kb_facade.py
 
 该脚本不会启动正式 server，不连接 Redis，不访问网络，不调用 AgentScope 原生 `/knowledge_bases`。它会用临时 registry 文件验证 KB metadata 的只读不建文件、创建、列表、详情、soft delete、同名允许、跨 tenant/user 404 隔离、坏 JSON fail closed、原子写入，以及 `main.py` 仍保持 RAG runtime 禁用参数。
 
+Phase 3.3 Document metadata facade smoke test：
+
+```bash
+python scripts/smoke_phase3_3_document_facade.py
+```
+
+该脚本不会启动正式 server，不连接 Redis，不访问网络，不调用 AgentScope RAG 或 Document 原生 API。它会用临时 KB registry 和临时 Document registry 验证 Document metadata 的父 KB 校验、四层隔离、请求体注入保护、soft delete、同名允许、坏 JSON fail closed 和原子写入。
+
+Phase 3.4 Document upload / parsing / chunking smoke test：
+
+```bash
+python scripts/smoke_phase3_4_document_processing.py
+```
+
+该脚本使用临时 KB registry、Document registry、Chunk registry 和文件存储目录，不读取真实 `.env`，不访问网络，不连接 Redis/Qdrant/Embedding。它验证 TXT/Markdown 上传解析、Chunk 生成、路径穿越保护、大小限制、状态冲突、tenant/user/KB/document 隔离、Chunk 删除标记和 RAG 不变量。当前本地未安装 `pypdf` 时，PDF 成功场景会明确跳过。
+
 ## 文档索引
 
 ### 架构和部署
@@ -573,6 +674,8 @@ python scripts/smoke_phase3_2_kb_facade.py
 - [docs/phase3_0-rag-service-architecture-alignment.md](docs/phase3_0-rag-service-architecture-alignment.md)：Phase 3.0 RAG Service 架构对齐
 - [docs/phase3_1-rag-config-skeleton.md](docs/phase3_1-rag-config-skeleton.md)：Phase 3.1 RAG 配置 skeleton
 - [docs/phase3_2-knowledge-base-facade-skeleton.md](docs/phase3_2-knowledge-base-facade-skeleton.md)：Phase 3.2 KnowledgeBase metadata facade
+- [docs/phase3_3-document-metadata-facade-skeleton.md](docs/phase3_3-document-metadata-facade-skeleton.md)：Phase 3.3 Document metadata facade
+- [docs/phase3_4-document-upload-parsing-chunking.md](docs/phase3_4-document-upload-parsing-chunking.md)：Phase 3.4 Document upload / parsing / chunking
 
 ## 安全边界
 
@@ -589,6 +692,9 @@ python scripts/smoke_phase3_2_kb_facade.py
 - KnowledgeBase facade 只管理本地 metadata，不调用 AgentScope 原生 `/knowledge_bases`。
 - 跨 tenant/user 的 KB detail/delete 统一返回 404，避免泄露资源存在性。
 - Phase 3.2 不新增 RAG audit，不写入 tool audit 文件。
+- Phase 3.3 不新增 Document/RAG audit，不写入 tool audit 文件。
+- Document facade 只管理 metadata，不保存真实文件、文本、chunk、embedding、向量或文件路径。
+- Phase 3.4 允许本地保存源文件和 Chunk text，但不生成 Embedding、不写向量库、不提供 Search API。
 - 本地 JSON metadata registry 只适合 MVP 和单进程本地验证，不是多进程或多实例生产存储。
 - 不把 RAG 直接做成 runtime tool。
 - 不修改官方 AgentScope 源码。
@@ -608,6 +714,8 @@ python scripts/smoke_phase3_2_kb_facade.py
 - [x] Phase 3.0 完成 RAG Service 架构对齐设计。
 - [x] Phase 3.1 接入 RAG config skeleton，默认关闭。
 - [x] Phase 3.2 接入 KnowledgeBase facade skeleton。
+- [x] Phase 3.3 接入 Document metadata facade skeleton。
+- [x] Phase 3.4 接入 Document upload / parsing / chunking skeleton。
 - [ ] Phase 4 接入 Long-term Memory。
 - [ ] Phase 5 接入 Agent Team。
 
@@ -630,8 +738,9 @@ python scripts/smoke_phase3_2_kb_facade.py
 - Phase 3.0：RAG Service 架构对齐和 AgentScope RAG 签名核验。
 - Phase 3.1：RAG config skeleton，默认关闭。
 - Phase 3.2：KnowledgeBase facade skeleton。
-- Phase 3.3：Document metadata / upload facade skeleton。
-- Phase 3.4：Search facade + metadata_filter isolation。
+- Phase 3.3：Document metadata facade skeleton，不做真实上传。
+- Phase 3.4：Document file upload, parsing and chunking skeleton，不做 Embedding/Search。
+- Phase 3.5：Search facade + metadata_filter isolation。
 - Phase 3.5：Agent-KB binding。
 - Phase 3.6：RAG audit / tracing。
 - Phase 3.7：RAG ECS smoke test。
